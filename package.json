@@ -1,0 +1,57 @@
+{
+  "name": "facaded-mlp-cuda",
+  "version": "1.0.0",
+  "description": "GPU-accelerated Multi-Layer Perceptron with CUDA/OpenCL support",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "name": "facaded-mlp-cuda",
+    "triples": {
+      "defaults": true,
+      "additional": [
+        "x86_64-unknown-linux-gnu",
+        "x86_64-apple-darwin",
+        "aarch64-apple-darwin",
+        "x86_64-pc-windows-msvc"
+      ]
+    }
+  },
+  "license": "MIT",
+  "author": "Matthew Abbott <mattbachg@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GlassBoxAI/GlassBoxAI-MLP"
+  },
+  "keywords": [
+    "mlp",
+    "neural-network",
+    "machine-learning",
+    "cuda",
+    "opencl",
+    "gpu",
+    "deep-learning",
+    "rust",
+    "napi"
+  ],
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "*.node"
+  ],
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.0"
+  },
+  "scripts": {
+    "artifacts": "napi artifacts",
+    "build": "napi build --platform --release --features nodejs,cuda,opencl",
+    "build:cpu": "napi build --platform --release --features nodejs",
+    "build:debug": "napi build --platform --features nodejs,cuda,opencl",
+    "prepublishOnly": "napi prepublish -t npm",
+    "test": "node examples/xor_example.js",
+    "universal": "napi universal",
+    "version": "napi version"
+  },
+  "engines": {
+    "node": ">= 16"
+  }
+}

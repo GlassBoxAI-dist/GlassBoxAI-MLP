@@ -1,0 +1,24 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "facaded-mlp-cuda"
+version = "1.0.0"
+description = "CUDA/OpenCL-accelerated Multi-Layer Perceptron"
+authors = [{name = "Matthew Abbott"}]
+license = {text = "MIT"}
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "numpy"]
+
+[tool.maturin]
+features = ["python"]
+python-source = "python"
+module-name = "facaded_mlp_cuda"

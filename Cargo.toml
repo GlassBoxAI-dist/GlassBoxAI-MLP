@@ -1,0 +1,43 @@
+[package]
+name = "facaded_mlp_cuda"
+version = "1.0.0"
+edition = "2021"
+authors = ["Matthew Abbott"]
+license = "MIT"
+description = "Facaded Multi-Layer Perceptron (CUDA/OpenCL/Rust)"
+
+# Library configuration
+[lib]
+name = "facaded_mlp_cuda"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+# Binary configuration
+[[bin]]
+name = "facaded_mlp_cuda"
+path = "src/main.rs"
+required-features = ["cli"]
+
+[features]
+default = ["cli", "cuda"]
+cli = []
+python = ["pyo3"]
+nodejs = ["napi", "napi-derive"]
+cuda = ["cudarc"]
+opencl = ["ocl"]
+
+[dependencies]
+rand = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+cudarc = { version = "0.12", features = ["driver", "nvrtc", "cuda-version-from-build-system"], optional = true }
+ocl = { version = "0.19", optional = true }
+prost = "0.13"
+prost-types = "0.13"
+pyo3 = { version = "0.22", features = ["extension-module"], optional = true }
+napi = { version = "2", features = ["napi9"], optional = true }
+napi-derive = { version = "2", optional = true }
+
+[build-dependencies]
+prost-build = "0.13"
+napi-build = "2"
