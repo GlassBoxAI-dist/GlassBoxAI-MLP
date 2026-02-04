@@ -40,14 +40,17 @@ This project demonstrates enterprise-grade software engineering practices includ
 3. [File Structure](#file-structure)
 4. [Prerequisites](#prerequisites)
 5. [Installation](#installation)
-6. [Python API Reference](#python-api-reference)
-7. [Node.js API Reference](#nodejs-api-reference)
-8. [CLI Reference](#cli-reference)
-9. [Testing](#testing)
-10. [Formal Verification with Kani](#formal-verification-with-kani)
-11. [CISA/NSA Compliance](#cisansa-compliance)
-12. [License](#license)
-13. [Author](#author)
+6. [Rust API Reference](#rust-api-reference)
+7. [Python API Reference](#python-api-reference)
+8. [Node.js API Reference](#nodejs-api-reference)
+9. [Julia API Reference](#julia-api-reference)
+10. [C++ API Reference](#c-api-reference)
+11. [CLI Reference](#cli-reference)
+12. [Testing](#testing)
+13. [Formal Verification with Kani](#formal-verification-with-kani)
+14. [CISA/NSA Compliance](#cisansa-compliance)
+15. [License](#license)
+16. [Author](#author)
 
 ---
 
@@ -238,6 +241,20 @@ make run-xor
 make run-backends
 ```
 
+### **Rust Crate**
+
+```toml
+# Cargo.toml
+[dependencies]
+glassboxai-mlp = "0.1"
+```
+
+Or with specific features:
+```toml
+[dependencies]
+glassboxai-mlp = { version = "0.1", features = ["cuda", "opencl"] }
+```
+
 ### **Quick Install (Node.js)**
 
 ```bash
@@ -281,6 +298,99 @@ npm run build
 # Node.js: CPU only
 npm run build:cpu
 ```
+
+---
+
+## **Rust API Reference**
+
+### **Quick Start**
+
+```rust
+use glassboxai_mlp::{MLP, MlpConfig, ActivationType, OptimizerType};
+
+fn main() -> Result<(), String> {
+    // Create a simple network with defaults
+    let mut mlp = MLP::new(2, &[8], 1)?;
+
+    // XOR training data
+    let inputs = vec![
+        vec![0.0, 0.0], vec![0.0, 1.0],
+        vec![1.0, 0.0], vec![1.0, 1.0],
+    ];
+    let targets = vec![
+        vec![0.0], vec![1.0], vec![1.0], vec![0.0],
+    ];
+
+    // Configure and train
+    mlp.set_learning_rate(0.5);
+    mlp.set_optimizer(OptimizerType::Adam);
+    
+    let result = mlp.fit(&inputs, &targets, 1000, true)?;
+    println!("Final loss: {:.6}", result.final_loss);
+
+    // Predict
+    let output = mlp.predict(&[1.0, 0.0])?;
+    println!("Prediction: {:.4}", output[0]);
+
+    // Introspection
+    let importance = mlp.feature_importance();
+    for fi in &importance {
+        println!("Feature {}: {:.4}", fi.index, fi.score);
+    }
+    
+    Ok(())
+}
+```
+
+### **Custom Configuration**
+
+```rust
+use glassboxai_mlp::{MLP, MlpConfig, ActivationType, OptimizerType, BackendType};
+
+let config = MlpConfig {
+    hidden_activation: ActivationType::ReLU,
+    output_activation: ActivationType::Softmax,
+    learning_rate: 0.001,
+    optimizer: OptimizerType::Adam,
+    backend: BackendType::CUDA,
+    dropout_rate: 0.2,
+    l2_lambda: 0.0001,
+    ..Default::default()
+};
+
+let mlp = MLP::with_config(784, &[256, 128], 10, config)?;
+```
+
+### **Glass Box Introspection**
+
+```rust
+// View layer information
+let info = mlp.layer_info(1);
+println!("Layer {}: {} neurons", info.index, info.size);
+
+// View individual neurons
+let neuron = mlp.neuron_view(1, 0);
+println!("Weights: {:?}", neuron.weights);
+println!("Bias: {}", neuron.bias);
+
+// Access optimizer state (Adam M and V values)
+let m = mlp.get_weight_m(1, 0, 0);
+let v = mlp.get_weight_v(1, 0, 0);
+
+// Activation histogram
+let hist = mlp.activation_histogram(1, 10);
+```
+
+### **Feature Flags**
+
+| Feature | Description |
+|---------|-------------|
+| `cuda` | NVIDIA CUDA GPU acceleration |
+| `opencl` | OpenCL GPU acceleration (AMD, Intel, NVIDIA) |
+| `python` | Python bindings (PyO3) |
+| `nodejs` | Node.js bindings (NAPI) |
+| `julia` | Julia/C FFI bindings |
+| `cli` | Command-line interface |
 
 ---
 
@@ -659,12 +769,99 @@ const result: TrainResult = mlp.fit(inputs, targets, 1000);
 
 ---
 
+## **Julia API Reference**
+
+See [julia/README.md](julia/README.md) for complete documentation.
+
+### **Quick Start**
+
+```julia
+using FacadedMLP
+
+# Create a network
+mlp = MLP(2, [8], 1; learning_rate=0.5, optimizer=Adam)
+
+# Train on XOR
+X = [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]]
+y = [[0.0], [1.0], [1.0], [0.0]]
+
+losses = fit!(mlp, X, y; epochs=1000, verbose=true)
+
+# Predict
+output = predict(mlp, [1.0, 0.0])
+println("Output: $(output[1])")
+
+# Save/load
+save(mlp, "model.json")
+mlp2 = load("model.json")
+```
+
+### **Installation**
+
+```bash
+# Build Rust library
+cargo build --release --features julia
+
+# In Julia
+using Pkg
+Pkg.develop(path="julia")
+```
+
+---
+
+## **C++ API Reference**
+
+See [cpp/README.md](cpp/README.md) for complete documentation.
+
+### **Quick Start**
+
+```cpp
+#include "facaded_mlp.hpp"
+
+using namespace facaded;
+
+int main() {
+    // Create network
+    MLP mlp(2, {8}, 1);
+    
+    // Configure
+    mlp.set_learning_rate(0.5);
+    mlp.set_optimizer(Optimizer::Adam);
+    
+    // Train on XOR
+    std::vector<std::vector<double>> X = {{0,0}, {0,1}, {1,0}, {1,1}};
+    std::vector<std::vector<double>> y = {{0}, {1}, {1}, {0}};
+    
+    auto result = mlp.fit(X, y, 1000, true);
+    std::cout << "Final loss: " << result.final_loss << std::endl;
+    
+    // Predict
+    auto output = mlp.predict({1.0, 0.0});
+    std::cout << "Prediction: " << output[0] << std::endl;
+    
+    return 0;
+}
+```
+
+### **Building**
+
+```bash
+# Build Rust library
+cargo build --release --features julia
+
+# Compile C++ example
+g++ -std=c++17 -O2 -I cpp/include example.cpp \
+    -L target/release -lfacaded_mlp_cuda -o example
+```
+
+---
+
 ## **CLI Reference**
 
 ### Usage
 
 ```
-facaded_mlp_cuda <command> [options]
+glassboxai-mlp <command> [options]
 ```
 
 ### Commands

@@ -1,31 +1,51 @@
 [package]
-name = "facaded_mlp_cuda"
-version = "1.0.0"
+name = "glassboxai-mlp"
+version = "0.1.0"
 edition = "2021"
 authors = ["Matthew Abbott"]
 license = "MIT"
-description = "Facaded Multi-Layer Perceptron (CUDA/OpenCL/Rust)"
+description = "Transparent, verifiable multi-layer perceptron with GPU support, introspection, and explainable AI features"
+repository = "https://github.com/GlassBoxAI-dist/GlassBoxAI-MLP"
+homepage = "https://github.com/GlassBoxAI-dist/GlassBoxAI-MLP"
+documentation = "https://docs.rs/glassboxai-mlp"
+readme = "README.md"
+keywords = ["machine-learning", "neural-network", "gpu", "explainable-ai", "mlp"]
+categories = ["algorithms", "science", "mathematics"]
+exclude = [
+    "examples/*.json",
+    "*.json",
+    "python/",
+    "julia/",
+    "cpp/",
+    "kani/",
+    ".github/",
+]
 
 # Library configuration
 [lib]
-name = "facaded_mlp_cuda"
+name = "glassboxai_mlp"
 path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 # Binary configuration
 [[bin]]
-name = "facaded_mlp_cuda"
+name = "glassboxai-mlp"
 path = "src/main.rs"
 required-features = ["cli"]
 
+# Examples
+[[example]]
+name = "xor"
+path = "examples/xor.rs"
+
 [features]
-default = ["cli", "cuda"]
+default = ["cuda"]
 cli = []
+cuda = ["cudarc"]
+opencl = ["ocl"]
 python = ["pyo3"]
 nodejs = ["napi", "napi-derive"]
 julia = []
-cuda = ["cudarc"]
-opencl = ["ocl"]
 
 [dependencies]
 rand = "0.8"
@@ -42,3 +62,13 @@ napi-derive = { version = "2", optional = true }
 [build-dependencies]
 prost-build = "0.13"
 napi-build = "2"
+
+[dev-dependencies]
+
+[profile.release]
+opt-level = 3
+lto = true
+
+[package.metadata.docs.rs]
+features = ["cuda", "opencl"]
+rustdoc-args = ["--cfg", "docsrs"]

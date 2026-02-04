@@ -172,24 +172,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "facaded_mlp_cuda"
-version = "1.0.0"
-dependencies = [
- "cudarc",
- "napi",
- "napi-build",
- "napi-derive",
- "ocl",
- "prost",
- "prost-build",
- "prost-types",
- "pyo3",
- "rand",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -228,6 +210,24 @@ dependencies = [
  "libc",
  "r-efi",
  "wasip2",
+]
+
+[[package]]
+name = "glassboxai-mlp"
+version = "0.1.0"
+dependencies = [
+ "cudarc",
+ "napi",
+ "napi-build",
+ "napi-derive",
+ "ocl",
+ "prost",
+ "prost-build",
+ "prost-types",
+ "pyo3",
+ "rand",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
