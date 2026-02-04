@@ -58,6 +58,9 @@ mod python;
 #[cfg(feature = "nodejs")]
 mod nodejs;
 
+#[cfg(feature = "julia")]
+pub mod julia;
+
 // Re-export main types
 pub use mlp::{
     TMultiLayerPerceptronCUDA,
