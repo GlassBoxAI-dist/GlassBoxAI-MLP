@@ -245,6 +245,9 @@ pub use mlp::{
 #[doc(hidden)]
 pub use gpu_backend::{TGPUBackend, detect_available_backends as detect_backends};
 
+#[cfg(any(kani, test))]
+pub mod kani;
+
 #[cfg(test)]
 mod tests {
     use super::*;

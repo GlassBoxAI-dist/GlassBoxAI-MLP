@@ -26,11 +26,14 @@ pub enum JuliaStatus {
 
 // Last error message (thread-local)
 thread_local! {
-    static LAST_ERROR: std::cell::RefCell<Option<String>> = std::cell::RefCell::new(None);
+    static LAST_ERROR: std::cell::RefCell<Option<CString>> = std::cell::RefCell::new(None);
 }
 
 fn set_error(msg: String) {
-    LAST_ERROR.with(|e| *e.borrow_mut() = Some(msg));
+    let safe_msg = msg.replace('\0', "");
+    LAST_ERROR.with(|e| {
+        *e.borrow_mut() = CString::new(safe_msg).ok();
+    });
 }
 
 /// Get last error message
@@ -38,7 +41,7 @@ fn set_error(msg: String) {
 pub extern "C" fn mlp_get_last_error() -> *const c_char {
     LAST_ERROR.with(|e| {
         match &*e.borrow() {
-            Some(msg) => msg.as_ptr() as *const c_char,
+            Some(cstr) => cstr.as_ptr(),
             None => ptr::null(),
         }
     })
@@ -72,6 +75,14 @@ pub extern "C" fn mlp_create(
 ) -> *mut JuliaMLP {
     if hidden_sizes.is_null() || hidden_count <= 0 {
         set_error("Invalid hidden layer configuration".to_string());
+        return ptr::null_mut();
+    }
+    if input_size <= 0 || output_size <= 0 {
+        set_error("Input and output sizes must be positive".to_string());
+        return ptr::null_mut();
+    }
+    if hidden_count > 64 {
+        set_error("Too many hidden layers".to_string());
         return ptr::null_mut();
     }
 
@@ -133,6 +144,14 @@ pub extern "C" fn mlp_train(
         set_error("Null pointer".to_string());
         return JuliaStatus::InvalidArg as i32;
     }
+    if input_len <= 0 || target_len <= 0 {
+        set_error("Input and target lengths must be positive".to_string());
+        return JuliaStatus::InvalidArg as i32;
+    }
+    if input_len > 4096 || target_len > 4096 {
+        set_error("Input or target length exceeds maximum".to_string());
+        return JuliaStatus::InvalidArg as i32;
+    }
 
     let mlp = unsafe { &mut *mlp };
     let input_vec: Vec<f64> = unsafe {
@@ -167,6 +186,14 @@ pub extern "C" fn mlp_predict(
         set_error("Null pointer".to_string());
         return JuliaStatus::InvalidArg as i32;
     }
+    if input_len <= 0 || output_capacity <= 0 {
+        set_error("Lengths must be positive".to_string());
+        return JuliaStatus::InvalidArg as i32;
+    }
+    if input_len > 4096 || output_capacity > 4096 {
+        set_error("Length exceeds maximum".to_string());
+        return JuliaStatus::InvalidArg as i32;
+    }
 
     let mlp = unsafe { &mut *mlp };
     let input_vec: Vec<f64> = unsafe {
@@ -198,6 +225,9 @@ pub extern "C" fn mlp_compute_loss(
     target_len: i32,
 ) -> f64 {
     if mlp.is_null() || output.is_null() || target.is_null() {
+        return f64::NAN;
+    }
+    if output_len <= 0 || target_len <= 0 || output_len > 4096 || target_len > 4096 {
         return f64::NAN;
     }
 
@@ -265,7 +295,7 @@ pub extern "C" fn mlp_get_learning_rate(mlp: *const JuliaMLP) -> f64 {
 /// Set learning rate
 #[no_mangle]
 pub extern "C" fn mlp_set_learning_rate(mlp: *mut JuliaMLP, value: f64) {
-    if !mlp.is_null() {
+    if !mlp.is_null() && !value.is_nan() && !value.is_infinite() && value >= 0.0 {
         unsafe { (*mlp).inner.LearningRate = value; }
     }
 }
@@ -295,7 +325,7 @@ pub extern "C" fn mlp_get_dropout_rate(mlp: *const JuliaMLP) -> f64 {
 /// Set dropout rate
 #[no_mangle]
 pub extern "C" fn mlp_set_dropout_rate(mlp: *mut JuliaMLP, value: f64) {
-    if !mlp.is_null() {
+    if !mlp.is_null() && !value.is_nan() && !value.is_infinite() && value >= 0.0 && value <= 1.0 {
         unsafe { (*mlp).inner.DropoutRate = value; }
     }
 }
@@ -310,7 +340,7 @@ pub extern "C" fn mlp_get_l2_lambda(mlp: *const JuliaMLP) -> f64 {
 /// Set L2 lambda
 #[no_mangle]
 pub extern "C" fn mlp_set_l2_lambda(mlp: *mut JuliaMLP, value: f64) {
-    if !mlp.is_null() {
+    if !mlp.is_null() && !value.is_nan() && !value.is_infinite() && value >= 0.0 {
         unsafe { (*mlp).inner.L2Lambda = value; }
     }
 }
@@ -359,7 +389,7 @@ pub extern "C" fn mlp_get_hidden_sizes(
     output: *mut i32,
     capacity: i32,
 ) -> i32 {
-    if mlp.is_null() || output.is_null() { return 0; }
+    if mlp.is_null() || output.is_null() || capacity <= 0 { return 0; }
     
     let sizes = unsafe { (*mlp).inner.GetHiddenSizes() };
     let len = sizes.len().min(capacity as usize);
@@ -435,7 +465,7 @@ pub extern "C" fn mlp_get_neuron_weights(
     output: *mut f64,
     capacity: i32,
 ) -> i32 {
-    if mlp.is_null() || output.is_null() { return 0; }
+    if mlp.is_null() || output.is_null() || capacity <= 0 || layer < 0 || neuron < 0 { return 0; }
     
     let weights = unsafe { (*mlp).inner.GetNeuronWeights(layer, neuron) };
     let len = weights.len().min(capacity as usize);
@@ -448,7 +478,7 @@ pub extern "C" fn mlp_get_neuron_weights(
 /// Get neuron bias
 #[no_mangle]
 pub extern "C" fn mlp_get_neuron_bias(mlp: *const JuliaMLP, layer: i32, neuron: i32) -> f64 {
-    if mlp.is_null() { return 0.0; }
+    if mlp.is_null() || layer < 0 || neuron < 0 { return 0.0; }
     unsafe { (*mlp).inner.GetNeuronBias(layer, neuron) }
 }
 
@@ -461,7 +491,7 @@ pub extern "C" fn mlp_set_neuron_weight(
     weight_idx: i32,
     value: f64,
 ) {
-    if !mlp.is_null() {
+    if !mlp.is_null() && layer >= 0 && neuron >= 0 && weight_idx >= 0 && !value.is_nan() && !value.is_infinite() {
         unsafe { (*mlp).inner.SetNeuronWeight(layer, neuron, weight_idx, value); }
     }
 }
@@ -469,7 +499,7 @@ pub extern "C" fn mlp_set_neuron_weight(
 /// Set neuron bias
 #[no_mangle]
 pub extern "C" fn mlp_set_neuron_bias(mlp: *mut JuliaMLP, layer: i32, neuron: i32, value: f64) {
-    if !mlp.is_null() {
+    if !mlp.is_null() && layer >= 0 && neuron >= 0 && !value.is_nan() && !value.is_infinite() {
         unsafe { (*mlp).inner.SetNeuronBias(layer, neuron, value); }
     }
 }
@@ -482,7 +512,7 @@ pub extern "C" fn mlp_get_layer_outputs(
     output: *mut f64,
     capacity: i32,
 ) -> i32 {
-    if mlp.is_null() || output.is_null() { return 0; }
+    if mlp.is_null() || output.is_null() || capacity <= 0 || layer < 0 { return 0; }
     
     let outputs = unsafe { (*mlp).inner.GetLayerOutputs(layer) };
     let len = outputs.len().min(capacity as usize);
@@ -500,7 +530,7 @@ pub extern "C" fn mlp_feature_importance(
     scores: *mut f64,
     capacity: i32,
 ) -> i32 {
-    if mlp.is_null() || indices.is_null() || scores.is_null() { return 0; }
+    if mlp.is_null() || indices.is_null() || scores.is_null() || capacity <= 0 { return 0; }
     
     let importance = unsafe { (*mlp).inner.compute_feature_importance() };
     let len = importance.len().min(capacity as usize);
@@ -513,6 +543,121 @@ pub extern "C" fn mlp_feature_importance(
     }
     
     len as i32
+}
+
+/// Get layer errors/gradients (after training)
+#[no_mangle]
+pub extern "C" fn mlp_get_layer_errors(
+    mlp: *mut JuliaMLP,
+    layer: i32,
+    output: *mut f64,
+    capacity: i32,
+) -> i32 {
+    if mlp.is_null() || output.is_null() || capacity <= 0 || layer < 0 { return 0; }
+
+    let errors = unsafe { (*mlp).inner.GetLayerErrors(layer) };
+    let len = errors.len().min(capacity as usize);
+    unsafe {
+        ptr::copy_nonoverlapping(errors.as_ptr(), output, len);
+    }
+    len as i32
+}
+
+/// Get the size of a layer
+#[no_mangle]
+pub extern "C" fn mlp_get_layer_size(mlp: *const JuliaMLP, layer: i32) -> i32 {
+    if mlp.is_null() || layer < 0 { return 0; }
+    unsafe { (*mlp).inner.GetLayerSize(layer as usize) as i32 }
+}
+
+/// Get the activation type of a layer (0=Sigmoid, 1=Tanh, 2=ReLU, 3=Softmax)
+#[no_mangle]
+pub extern "C" fn mlp_get_layer_activation(mlp: *const JuliaMLP, layer: i32) -> i32 {
+    if mlp.is_null() || layer < 0 { return 0; }
+    unsafe { (*mlp).inner.GetLayerActivation(layer) as i32 }
+}
+
+/// Get Adam optimizer's first moment (M) for a weight
+#[no_mangle]
+pub extern "C" fn mlp_get_weight_m(
+    mlp: *const JuliaMLP,
+    layer: i32,
+    neuron: i32,
+    weight_idx: i32,
+) -> f64 {
+    if mlp.is_null() || layer < 0 || neuron < 0 || weight_idx < 0 { return 0.0; }
+    unsafe { (*mlp).inner.GetWeightM(layer, neuron, weight_idx) }
+}
+
+/// Get Adam optimizer's second moment (V) for a weight
+#[no_mangle]
+pub extern "C" fn mlp_get_weight_v(
+    mlp: *const JuliaMLP,
+    layer: i32,
+    neuron: i32,
+    weight_idx: i32,
+) -> f64 {
+    if mlp.is_null() || layer < 0 || neuron < 0 || weight_idx < 0 { return 0.0; }
+    unsafe { (*mlp).inner.GetWeightV(layer, neuron, weight_idx) }
+}
+
+/// Get Adam optimizer's first moment (M) for a bias
+#[no_mangle]
+pub extern "C" fn mlp_get_bias_m(mlp: *const JuliaMLP, layer: i32, neuron: i32) -> f64 {
+    if mlp.is_null() || layer < 0 || neuron < 0 { return 0.0; }
+    unsafe { (*mlp).inner.GetBiasM(layer, neuron) }
+}
+
+/// Get Adam optimizer's second moment (V) for a bias
+#[no_mangle]
+pub extern "C" fn mlp_get_bias_v(mlp: *const JuliaMLP, layer: i32, neuron: i32) -> f64 {
+    if mlp.is_null() || layer < 0 || neuron < 0 { return 0.0; }
+    unsafe { (*mlp).inner.GetBiasV(layer, neuron) }
+}
+
+/// Get activation histogram for a layer
+#[no_mangle]
+pub extern "C" fn mlp_get_activation_histogram(
+    mlp: *const JuliaMLP,
+    layer: i32,
+    bins: i32,
+    output: *mut i32,
+    capacity: i32,
+) -> i32 {
+    if mlp.is_null() || output.is_null() || capacity <= 0 || bins <= 0 || layer < 0 { return 0; }
+
+    let hist = unsafe { (*mlp).inner.GetActivationHistogram(layer, bins as usize) };
+    let len = hist.len().min(capacity as usize);
+    unsafe {
+        ptr::copy_nonoverlapping(hist.as_ptr(), output, len);
+    }
+    len as i32
+}
+
+/// Get gradient histogram for a layer
+#[no_mangle]
+pub extern "C" fn mlp_get_gradient_histogram(
+    mlp: *const JuliaMLP,
+    layer: i32,
+    bins: i32,
+    output: *mut i32,
+    capacity: i32,
+) -> i32 {
+    if mlp.is_null() || output.is_null() || capacity <= 0 || bins <= 0 || layer < 0 { return 0; }
+
+    let hist = unsafe { (*mlp).inner.GetGradientHistogram(layer, bins as usize) };
+    let len = hist.len().min(capacity as usize);
+    unsafe {
+        ptr::copy_nonoverlapping(hist.as_ptr(), output, len);
+    }
+    len as i32
+}
+
+/// Get Adam optimizer timestep
+#[no_mangle]
+pub extern "C" fn mlp_get_timestep(mlp: *const JuliaMLP) -> i32 {
+    if mlp.is_null() { return 0; }
+    unsafe { (*mlp).inner.Timestep }
 }
 
 // Helper functions

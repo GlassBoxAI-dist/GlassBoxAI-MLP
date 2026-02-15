@@ -121,6 +121,102 @@ Proofs that allocations respect security budgets:
 - `verify_layer_allocation_within_budget`
 - `verify_mlp_total_memory_bounded`
 
+### 16. FFI Boundary Safety ✓
+Proofs that all data crossing the C FFI boundary (julia.rs) is validated before use.
+Covers the complete extern "C" surface consumed by C++, Go, C#, Julia, Zig, and Python wrappers.
+
+#### A. Signed-to-Unsigned Conversion Safety
+- `verify_i32_to_usize_rejects_negative`
+- `verify_i32_positive_rejects_zero_and_negative`
+- `verify_ffi_len_validates_range`
+- `verify_ffi_len_i32_min_rejected`
+- `verify_ffi_len_negative_one_rejected`
+
+#### B. Output Buffer Overflow Prevention
+- `verify_negative_capacity_prevents_buffer_write`
+- `verify_zero_capacity_prevents_buffer_write`
+- `verify_output_write_bounded_by_validated_capacity`
+
+#### C. NaN/Infinity Parameter Rejection
+- `verify_f64_param_rejects_nan`
+- `verify_f64_param_rejects_infinity`
+- `verify_f64_param_accepts_finite`
+- `verify_learning_rate_validation`
+- `verify_dropout_rate_validation`
+- `verify_l2_lambda_validation`
+
+#### D. Enum Variant Validation from Foreign Callers
+- `verify_activation_i32_validation_exhaustive`
+- `verify_activation_i32_negative_rejected`
+- `verify_optimizer_i32_validation_exhaustive`
+- `verify_optimizer_i32_negative_rejected`
+
+#### E. MLP Creation Preconditions
+- `verify_ffi_create_rejects_zero_input`
+- `verify_ffi_create_rejects_zero_output`
+- `verify_ffi_create_rejects_zero_hidden`
+- `verify_ffi_create_rejects_excessive_hidden_layers`
+- `verify_ffi_create_rejects_oversized_hidden`
+- `verify_ffi_hidden_count_i32_negative_as_usize_huge`
+- `verify_ffi_i32_min_as_usize_huge`
+
+#### F. Train/Predict Length Validation
+- `verify_ffi_train_input_len_validated`
+- `verify_ffi_predict_capacity_validated`
+- `verify_ffi_predict_output_bounded_by_capacity`
+
+#### G. Layer/Neuron Index Validation
+- `verify_ffi_layer_index_negative_rejected`
+- `verify_ffi_layer_index_out_of_bounds_safe`
+- `verify_ffi_neuron_index_negative_rejected`
+- `verify_ffi_weight_index_negative_rejected`
+
+#### H. Histogram Parameter Validation
+- `verify_ffi_histogram_bins_negative_rejected`
+- `verify_ffi_histogram_bins_zero_rejected`
+
+#### I. Error String Safety
+- `verify_ffi_error_nul_byte_sanitized`
+
+#### J. No-Panic Guarantee for All FFI Validators
+- `verify_validate_i32_as_usize_no_panic`
+- `verify_validate_i32_positive_no_panic`
+- `verify_validate_ffi_len_no_panic`
+- `verify_validate_f64_param_no_panic`
+- `verify_validate_f64_param_range_no_panic`
+- `verify_validate_learning_rate_no_panic`
+- `verify_validate_dropout_rate_no_panic`
+- `verify_validate_l2_lambda_no_panic`
+- `verify_validate_activation_i32_no_panic`
+- `verify_validate_optimizer_i32_no_panic`
+
+#### K. ABI Type Compatibility
+- `verify_activation_type_repr_i32_abi`
+- `verify_optimizer_type_repr_i32_abi`
+- `verify_f64_abi_compatibility`
+- `verify_i32_abi_compatibility`
+
+#### L. Input Array NaN/Infinity Detection
+- `verify_ffi_input_array_nan_detection`
+- `verify_ffi_input_array_infinity_detection`
+
+#### M. Resource Limits at Boundary
+- `verify_ffi_allocation_respects_budget_at_boundary`
+- `verify_ffi_to_vec_copy_bounded`
+
+#### N. State Consistency After Parameter Mutation
+- `verify_ffi_parameter_mutation_preserves_structure`
+
+#### O. End-to-End FFI Pipeline Validation
+- `verify_ffi_complete_train_validation_pipeline`
+- `verify_ffi_complete_predict_validation_pipeline`
+- `verify_ffi_complete_create_validation_pipeline`
+
+#### P. FFI Setter Value Validation
+- `verify_ffi_setter_rejects_nan_value`
+- `verify_ffi_setter_rejects_inf_value`
+- `verify_ffi_setter_negative_index_rejected`
+
 ## Architecture
 
 ```
@@ -128,7 +224,8 @@ kani/
 ├── Cargo.toml          # Standalone crate for verification
 ├── lib.rs              # Module root
 ├── core_types.rs       # Standalone types (no CUDA deps)
-├── harnesses.rs        # All #[kani::proof] harnesses
+├── harnesses.rs        # All #[kani::proof] harnesses (categories 1-15)
+├── ffi_boundary.rs     # FFI boundary safety harnesses (category 16)
 └── README.md           # This file
 ```
 

@@ -2,7 +2,7 @@
 
 ## **Multi-Layer Perceptron Suite**
 
-### *GPU-Accelerated MLP with Python & Node.js Bindings and Formal Verification*
+### *GPU-Accelerated MLP with Python, Node.js, Julia, C++, Go, C# & Zig Bindings and Formal Verification*
 
 ---
 
@@ -12,6 +12,9 @@
 [![Rust](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-16+-339933.svg)](https://nodejs.org/)
+[![Go](https://img.shields.io/badge/Go-1.21+-00ADD8.svg)](https://go.dev/)
+[![C#](https://img.shields.io/badge/C%23-.NET%208.0-512BD4.svg)](https://dotnet.microsoft.com/)
+[![Zig](https://img.shields.io/badge/Zig-0.13+-F7A41D.svg)](https://ziglang.org/)
 [![Kani](https://img.shields.io/badge/Kani-Verified-brightgreen.svg)](https://model-checking.github.io/kani/)
 [![CISA Compliant](https://img.shields.io/badge/CISA-Secure%20by%20Design-blue.svg)](https://www.cisa.gov/securebydesign)
 
@@ -24,6 +27,11 @@ GlassBoxAI-MLP is a comprehensive, production-ready Multi-Layer Perceptron imple
 - **Multiple GPU backends**: CUDA and OpenCL acceleration with automatic backend selection
 - **Python bindings**: Full-featured Python API via PyO3 and maturin
 - **Node.js bindings**: Full-featured Node.js API via napi-rs
+- **Go bindings**: Idiomatic Go API via cgo
+- **C# bindings**: .NET API via P/Invoke
+- **Zig bindings**: Zig API via C FFI
+- **Julia bindings**: Julia API via ccall FFI
+- **C++ bindings**: Header-only C++ wrapper
 - **Rust implementation**: Memory-safe, high-performance core
 - **Facade pattern architecture**: Clean API separation for maintainability and introspection
 - **Formal verification**: Kani-verified Rust implementation for memory safety guarantees
@@ -45,12 +53,15 @@ This project demonstrates enterprise-grade software engineering practices includ
 8. [Node.js API Reference](#nodejs-api-reference)
 9. [Julia API Reference](#julia-api-reference)
 10. [C++ API Reference](#c-api-reference)
-11. [CLI Reference](#cli-reference)
-12. [Testing](#testing)
-13. [Formal Verification with Kani](#formal-verification-with-kani)
-14. [CISA/NSA Compliance](#cisansa-compliance)
-15. [License](#license)
-16. [Author](#author)
+11. [Go API Reference](#go-api-reference)
+12. [C# API Reference](#c-api-reference-1)
+13. [Zig API Reference](#zig-api-reference)
+14. [CLI Reference](#cli-reference)
+15. [Testing](#testing)
+16. [Formal Verification with Kani](#formal-verification-with-kani)
+17. [CISA/NSA Compliance](#cisansa-compliance)
+18. [License](#license)
+19. [Author](#author)
 
 ---
 
@@ -93,42 +104,38 @@ This project demonstrates enterprise-grade software engineering practices includ
 ## **Architecture**
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        GlassBoxAI-MLP                           │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌────────────────────────────┐  ┌──────────────────────────────┐│
-│  │      Python Bindings      │  │      Node.js Bindings        ││
-│  │  • facaded_mlp_cuda (PyO3)│  │  • facaded-mlp-cuda (napi-rs)││
-│  │  • MLP class with full API│  │  • MLP class with full API   ││
-│  │  • PyActivationType enum  │  │  • JsActivationType enum     ││
-│  │  • load_csv, normalize    │  │  • loadCsv, normalize        ││
-│  └────────────────────────────┘  └──────────────────────────────┘│
-│                              │                                  │
-│  ┌───────────────────────────┴─────────────────────────────────┐│
-│  │                      Rust Core                              ││
-│  ├─────────────┬─────────────┬─────────────────────────────────┤│
-│  │   CUDA      │   OpenCL    │          CPU                    ││
-│  │  Backend    │   Backend   │        Backend                  ││
-│  │ (cudarc)    │   (ocl)     │     (Pure Rust)                 ││
-│  └─────────────┴─────────────┴─────────────────────────────────┘│
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │                    Shared Features                          ││
-│  │  • Consistent API across all backends                       ││
-│  │  • JSON-compatible model format                             ││
-│  │  • ONNX import/export                                       ││
-│  │  • Comprehensive test suites                                ││
-│  └─────────────────────────────────────────────────────────────┘│
-│                                                                 │
-│  ┌─────────────┐                                                │
-│  │    Kani     │                                                │
-│  │  Proofs     │                                                │
-│  │  (Formal    │                                                │
-│  │  Verify)    │                                                │
-│  └─────────────┘                                                │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────┐
+│                            GlassBoxAI-MLP                                │
+├──────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────┐ ┌──────┐ ┌────┐ ┌─────┐│
+│  │    Python     │ │   Node.js    │ │  Julia   │ │ C++  │ │ Go │ │ C#  ││
+│  │  (PyO3)      │ │  (napi-rs)   │ │ (ccall)  │ │(hdr) │ │(cgo)│ │(P/I)││
+│  └──────┬───────┘ └──────┬───────┘ └────┬─────┘ └──┬───┘ └─┬──┘ └──┬──┘│
+│         │                │              │           │       │       │    │
+│  ┌──────┴────────────────┴──────────────┴───────────┴───────┴───────┴──┐│
+│  │                          C FFI (extern "C")                         ││
+│  ├─────────────────────────────────────────────────────────────────────┤│
+│  │                            Rust Core                                ││
+│  ├─────────────┬─────────────┬─────────────────────────────────────────┤│
+│  │   CUDA      │   OpenCL    │          CPU                            ││
+│  │  Backend    │   Backend   │        Backend                          ││
+│  │ (cudarc)    │   (ocl)     │     (Pure Rust)                         ││
+│  └─────────────┴─────────────┴─────────────────────────────────────────┘│
+│                                                                          │
+│  ┌─────────────────────────┐  ┌──────────┐                               │
+│  │     Shared Features     │  │   Zig    │                               │
+│  │  • Consistent API       │  │ (C FFI)  │                               │
+│  │  • JSON model format    │  └──────────┘                               │
+│  │  • ONNX import/export   │                                             │
+│  │  • Comprehensive tests  │  ┌──────────┐                               │
+│  └─────────────────────────┘  │   Kani   │                               │
+│                               │  Proofs  │                               │
+│                               │ (Formal  │                               │
+│                               │  Verify) │                               │
+│                               └──────────┘                               │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -154,11 +161,30 @@ GlassBoxAI-MLP/
 │   └── facaded_mlp_cuda/
 │       └── __init__.py         # Python module init
 │
+├── go/                         # Go wrapper
+│   ├── facadedmlp/             # Go package (cgo bindings)
+│   ├── examples/               # Go examples
+│   ├── go.mod
+│   └── README.md
+│
+├── csharp/                     # C# wrapper
+│   ├── GlassBoxAI.MLP/         # .NET project (P/Invoke)
+│   ├── examples/               # C# examples
+│   └── README.md
+│
+├── zig/                        # Zig wrapper
+│   ├── mlp.zig                 # Zig bindings (C FFI)
+│   ├── c.zig                   # C interop layer
+│   ├── build.zig               # Build configuration
+│   ├── examples/               # Zig examples
+│   └── README.md
+│
 ├── kani/                       # Formal verification proofs
 │   ├── Cargo.toml
 │   ├── lib.rs
 │   ├── core_types.rs
-│   ├── harnesses.rs
+│   ├── harnesses.rs            # Kani proofs (categories 1-15)
+│   ├── ffi_boundary.rs         # FFI boundary safety proofs (category 16)
 │   └── README.md
 │
 ├── examples/                   # Example scripts
@@ -856,6 +882,169 @@ g++ -std=c++17 -O2 -I cpp/include example.cpp \
 
 ---
 
+## **Go API Reference**
+
+See [go/README.md](go/README.md) for complete documentation.
+
+### **Quick Start**
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    
+    "github.com/GlassBoxAI-dist/GlassBoxAI-MLP/go/facadedmlp"
+)
+
+func main() {
+    // Create a network: 2 inputs, 8 hidden neurons, 1 output
+    mlp, err := facadedmlp.New(2, []int{8}, 1, nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer mlp.Close()
+    
+    // XOR training data
+    inputs := [][]float64{{0, 0}, {0, 1}, {1, 0}, {1, 1}}
+    targets := [][]float64{{0}, {1}, {1}, {0}}
+    
+    // Configure and train
+    mlp.SetLearningRate(0.5)
+    mlp.SetOptimizer(facadedmlp.Adam)
+    
+    result, err := mlp.Fit(inputs, targets, 1000, true)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("Final loss: %.6f\n", result.FinalLoss)
+    
+    // Predict
+    output, _ := mlp.Predict([]float64{1.0, 0.0})
+    fmt.Printf("Prediction: %.4f\n", output[0])
+}
+```
+
+### **Installation**
+
+```bash
+# Build Rust library
+cargo build --release --features julia
+
+# Set library path
+export LD_LIBRARY_PATH=/path/to/GlassBoxAI-MLP/target/release:$LD_LIBRARY_PATH
+
+# Run Go example
+cd go/examples/xor
+go build
+LD_LIBRARY_PATH=../../../target/release ./xor
+```
+
+---
+
+## **C# API Reference**
+
+See [csharp/README.md](csharp/README.md) for complete documentation.
+
+### **Quick Start**
+
+```csharp
+using GlassBoxAI.MLP;
+
+using var mlp = new MLP(2, new[] { 8 }, 1);
+mlp.LearningRate = 0.5;
+mlp.Optimizer = OptimizerType.Adam;
+
+var inputs = new[] {
+    new[] { 0.0, 0.0 }, new[] { 0.0, 1.0 },
+    new[] { 1.0, 0.0 }, new[] { 1.0, 1.0 }
+};
+var targets = new[] {
+    new[] { 0.0 }, new[] { 1.0 },
+    new[] { 1.0 }, new[] { 0.0 }
+};
+
+var result = mlp.Fit(inputs, targets, 1000, verbose: true);
+Console.WriteLine($"Final loss: {result.FinalLoss:F6}");
+
+var output = mlp.Predict(new[] { 1.0, 0.0 });
+Console.WriteLine($"Prediction: {output[0]:F4}");
+```
+
+### **Building**
+
+```bash
+# Build the native library
+cargo build --release --features julia
+
+# Build the C# project
+cd csharp/examples
+dotnet build
+
+# Run the example
+LD_LIBRARY_PATH=../../target/release dotnet run
+```
+
+---
+
+## **Zig API Reference**
+
+See [zig/README.md](zig/README.md) for complete documentation.
+
+### **Quick Start**
+
+```zig
+const std = @import("std");
+const mlp_mod = @import("glassboxai-mlp");
+const MLP = mlp_mod.MLP;
+
+pub fn main() !void {
+    const allocator = std.heap.page_allocator;
+
+    const hidden = [_]i32{8};
+    var net = try MLP.init(allocator, 2, &hidden, 1, .{
+        .learning_rate = 0.5,
+        .optimizer = .adam,
+    });
+    defer net.deinit();
+
+    // Train on XOR
+    const inputs = [_][]const f64{
+        &[_]f64{ 0.0, 0.0 }, &[_]f64{ 0.0, 1.0 },
+        &[_]f64{ 1.0, 0.0 }, &[_]f64{ 1.0, 1.0 },
+    };
+    const targets = [_][]const f64{
+        &[_]f64{0.0}, &[_]f64{1.0},
+        &[_]f64{1.0}, &[_]f64{0.0},
+    };
+
+    var result = try net.fit(allocator, &inputs, &targets, 1000, true);
+    defer result.deinit();
+
+    // Predict
+    var output: [1]f64 = undefined;
+    _ = try net.predict(&[_]f64{ 1.0, 0.0 }, &output);
+    std.debug.print("Output: {d:.4}\n", .{output[0]});
+}
+```
+
+### **Building**
+
+```bash
+# Build the native library
+cargo build --release --features julia
+
+# Build the Zig example
+cd zig
+zig build
+
+# Run the example
+LD_LIBRARY_PATH=../target/release zig-out/bin/xor_example
+```
+
+---
+
 ## **CLI Reference**
 
 ### Usage
@@ -981,10 +1170,10 @@ The Rust implementation includes **Kani formal verification proofs** that mathem
 cd kani
 
 # Run all proofs
-cargo kani
+cargo kani --tests
 
 # Run specific proof
-cargo kani --harness proof_name
+cargo kani --harness verify_array_bounds_weight_access
 
 # Run unit tests
 cargo test
@@ -998,6 +1187,181 @@ Traditional testing can only verify specific test cases. Formal verification wit
 - **Mathematically proves** absence of panics, buffer overflows, and undefined behavior
 - **Catches edge cases** that random testing might miss
 - **Provides cryptographic-level assurance** for safety-critical code
+
+### Verification Harnesses (Categories 1–15)
+
+#### 1. Strict Bound Checks
+- `verify_array_bounds_layer_access`
+- `verify_array_bounds_weight_access`
+- `verify_array_bounds_bias_access`
+- `verify_array_bounds_output_access`
+- `verify_validate_bounds_generic`
+
+#### 2. Pointer Validity Proofs
+- `verify_no_null_pointer_in_layer_creation`
+- `verify_mlp_initialization_validity`
+
+#### 3. No-Panic Guarantee
+- `verify_activation_functions_no_panic`
+- `verify_max_index_no_panic`
+- `verify_mlp_construction_no_panic`
+- `verify_parse_activation_no_panic`
+- `verify_parse_optimizer_no_panic`
+
+#### 4. Integer Overflow Prevention
+- `verify_safe_add_no_overflow`
+- `verify_safe_sub_no_overflow`
+- `verify_safe_mul_no_overflow`
+- `verify_layer_size_calculation_no_overflow`
+
+#### 5. Division-by-Zero Exclusion
+- `verify_safe_div_no_zero`
+- `verify_normalization_no_div_by_zero`
+- `verify_softmax_denominator_non_zero`
+
+#### 6. Global State Consistency
+- `verify_mlp_invariants_after_mutation`
+- `verify_layer_invariants_preserved`
+
+#### 7. Deadlock-Free Logic
+- `verify_no_reentrant_locking_pattern`
+
+#### 8. Input Sanitization Bounds
+- `verify_bounded_loop_terminates`
+- `verify_training_epoch_bounded`
+- `verify_hidden_layer_count_bounded`
+
+#### 9. Result Coverage Audit
+- `verify_layer_access_result_handling`
+- `verify_mlp_creation_result_handling`
+- `verify_compute_loss_result_handling`
+
+#### 10. Memory Leak/Leakage Proofs
+- `verify_layer_data_owned_vectors`
+- `verify_allocation_with_limit_respects_budget`
+
+#### 11. Constant-Time Execution
+- `verify_sigmoid_constant_time_bounds`
+- `verify_relu_constant_time_output`
+- `verify_activation_selection_public_key`
+
+#### 12. State Machine Integrity
+- `verify_privilege_escalation_blocked`
+- `verify_unprivileged_cannot_escalate`
+
+#### 13. Enum Exhaustion
+- `verify_activation_type_exhaustive`
+- `verify_optimizer_type_exhaustive`
+- `verify_command_type_exhaustive`
+
+#### 14. Floating-Point Sanity
+- `verify_fp_sanity_check`
+- `verify_clamp_fp_handles_special_values`
+- `verify_sigmoid_never_nan_or_inf`
+- `verify_relu_never_nan`
+- `verify_compute_loss_nan_handling`
+
+#### 15. Resource Limit Compliance
+- `verify_memory_budget_enforcement`
+- `verify_layer_allocation_within_budget`
+- `verify_mlp_total_memory_bounded`
+
+### FFI Boundary Safety Harnesses (Category 16)
+
+Proofs that all data crossing the C FFI boundary is validated before use. Covers the complete `extern "C"` surface consumed by C++, Go, C#, Julia, Zig, and Python wrappers.
+
+#### A. Signed-to-Unsigned Conversion Safety
+- `verify_i32_to_usize_rejects_negative`
+- `verify_i32_positive_rejects_zero_and_negative`
+- `verify_ffi_len_validates_range`
+- `verify_ffi_len_i32_min_rejected`
+- `verify_ffi_len_negative_one_rejected`
+
+#### B. Output Buffer Overflow Prevention
+- `verify_negative_capacity_prevents_buffer_write`
+- `verify_zero_capacity_prevents_buffer_write`
+- `verify_output_write_bounded_by_validated_capacity`
+
+#### C. NaN/Infinity Parameter Rejection
+- `verify_f64_param_rejects_nan`
+- `verify_f64_param_rejects_infinity`
+- `verify_f64_param_accepts_finite`
+- `verify_learning_rate_validation`
+- `verify_dropout_rate_validation`
+- `verify_l2_lambda_validation`
+
+#### D. Enum Variant Validation from Foreign Callers
+- `verify_activation_i32_validation_exhaustive`
+- `verify_activation_i32_negative_rejected`
+- `verify_optimizer_i32_validation_exhaustive`
+- `verify_optimizer_i32_negative_rejected`
+
+#### E. MLP Creation Preconditions
+- `verify_ffi_create_rejects_zero_input`
+- `verify_ffi_create_rejects_zero_output`
+- `verify_ffi_create_rejects_zero_hidden`
+- `verify_ffi_create_rejects_excessive_hidden_layers`
+- `verify_ffi_create_rejects_oversized_hidden`
+- `verify_ffi_hidden_count_i32_negative_as_usize_huge`
+- `verify_ffi_i32_min_as_usize_huge`
+
+#### F. Train/Predict Length Validation
+- `verify_ffi_train_input_len_validated`
+- `verify_ffi_predict_capacity_validated`
+- `verify_ffi_predict_output_bounded_by_capacity`
+
+#### G. Layer/Neuron Index Validation
+- `verify_ffi_layer_index_negative_rejected`
+- `verify_ffi_layer_index_out_of_bounds_safe`
+- `verify_ffi_neuron_index_negative_rejected`
+- `verify_ffi_weight_index_negative_rejected`
+
+#### H. Histogram Parameter Validation
+- `verify_ffi_histogram_bins_negative_rejected`
+- `verify_ffi_histogram_bins_zero_rejected`
+
+#### I. Error String Safety
+- `verify_ffi_error_nul_byte_sanitized`
+
+#### J. No-Panic Guarantee for All FFI Validators
+- `verify_validate_i32_as_usize_no_panic`
+- `verify_validate_i32_positive_no_panic`
+- `verify_validate_ffi_len_no_panic`
+- `verify_validate_f64_param_no_panic`
+- `verify_validate_f64_param_range_no_panic`
+- `verify_validate_learning_rate_no_panic`
+- `verify_validate_dropout_rate_no_panic`
+- `verify_validate_l2_lambda_no_panic`
+- `verify_validate_activation_i32_no_panic`
+- `verify_validate_optimizer_i32_no_panic`
+
+#### K. ABI Type Compatibility
+- `verify_activation_type_repr_i32_abi`
+- `verify_optimizer_type_repr_i32_abi`
+- `verify_f64_abi_compatibility`
+- `verify_i32_abi_compatibility`
+
+#### L. Input Array NaN/Infinity Detection
+- `verify_ffi_input_array_nan_detection`
+- `verify_ffi_input_array_infinity_detection`
+
+#### M. Resource Limits at Boundary
+- `verify_ffi_allocation_respects_budget_at_boundary`
+- `verify_ffi_to_vec_copy_bounded`
+
+#### N. State Consistency After Parameter Mutation
+- `verify_ffi_parameter_mutation_preserves_structure`
+
+#### O. End-to-End FFI Pipeline Validation
+- `verify_ffi_complete_train_validation_pipeline`
+- `verify_ffi_complete_predict_validation_pipeline`
+- `verify_ffi_complete_create_validation_pipeline`
+
+#### P. FFI Setter Value Validation
+- `verify_ffi_setter_rejects_nan_value`
+- `verify_ffi_setter_rejects_inf_value`
+- `verify_ffi_setter_negative_index_rejected`
+- `verify_ffi_setter_accepts_valid_params`
 
 ---
 

@@ -394,6 +394,101 @@ public:
     }
     
     /**
+     * Get layer errors/gradients (after training)
+     */
+    std::vector<double> get_layer_errors(int layer) {
+        int layer_size;
+        if (layer == 0) {
+            layer_size = input_size_;
+        } else if (layer <= static_cast<int>(hidden_sizes_.size())) {
+            layer_size = hidden_sizes_[layer - 1];
+        } else {
+            layer_size = output_size_;
+        }
+
+        std::vector<double> errors(layer_size);
+        int32_t len = mlp_get_layer_errors(
+            handle_, layer,
+            errors.data(), static_cast<int32_t>(layer_size)
+        );
+        errors.resize(len);
+        return errors;
+    }
+
+    /**
+     * Get the size of a layer
+     */
+    int get_layer_size(int layer) const {
+        return mlp_get_layer_size(handle_, layer);
+    }
+
+    /**
+     * Get the activation type of a layer
+     */
+    Activation get_layer_activation(int layer) const {
+        return static_cast<Activation>(mlp_get_layer_activation(handle_, layer));
+    }
+
+    /**
+     * Get Adam optimizer's first moment (M) for a weight
+     */
+    double get_weight_m(int layer, int neuron, int weight_idx) const {
+        return mlp_get_weight_m(handle_, layer, neuron, weight_idx);
+    }
+
+    /**
+     * Get Adam optimizer's second moment (V) for a weight
+     */
+    double get_weight_v(int layer, int neuron, int weight_idx) const {
+        return mlp_get_weight_v(handle_, layer, neuron, weight_idx);
+    }
+
+    /**
+     * Get Adam optimizer's first moment (M) for a bias
+     */
+    double get_bias_m(int layer, int neuron) const {
+        return mlp_get_bias_m(handle_, layer, neuron);
+    }
+
+    /**
+     * Get Adam optimizer's second moment (V) for a bias
+     */
+    double get_bias_v(int layer, int neuron) const {
+        return mlp_get_bias_v(handle_, layer, neuron);
+    }
+
+    /**
+     * Get activation histogram for a layer
+     */
+    std::vector<int> get_activation_histogram(int layer, int bins) const {
+        std::vector<int32_t> hist(bins);
+        int32_t len = mlp_get_activation_histogram(
+            handle_, layer, bins,
+            hist.data(), static_cast<int32_t>(bins)
+        );
+        return std::vector<int>(hist.begin(), hist.begin() + len);
+    }
+
+    /**
+     * Get gradient histogram for a layer
+     */
+    std::vector<int> get_gradient_histogram(int layer, int bins) const {
+        std::vector<int32_t> hist(bins);
+        int32_t len = mlp_get_gradient_histogram(
+            handle_, layer, bins,
+            hist.data(), static_cast<int32_t>(bins)
+        );
+        return std::vector<int>(hist.begin(), hist.begin() + len);
+    }
+
+    /**
+     * Get Adam optimizer timestep
+     */
+    int timestep() const {
+        return mlp_get_timestep(handle_);
+    }
+
+    /**
      * String representation
      */
     std::string to_string() const {

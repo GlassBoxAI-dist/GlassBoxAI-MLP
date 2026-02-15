@@ -254,6 +254,98 @@ int32_t mlp_feature_importance(
     int32_t capacity
 );
 
+/*
+ * Get layer errors/gradients (after training).
+ *
+ * @param layer Layer index
+ * @param output Buffer to receive errors
+ * @param capacity Size of buffer
+ * @return Number of errors
+ */
+int32_t mlp_get_layer_errors(
+    mlp_handle_t mlp,
+    int32_t layer,
+    double* output,
+    int32_t capacity
+);
+
+/*
+ * Get the size (number of neurons) of a layer.
+ *
+ * @param layer Layer index (0 = input, 1+ = hidden/output)
+ * @return Number of neurons in the layer
+ */
+int32_t mlp_get_layer_size(mlp_handle_t mlp, int32_t layer);
+
+/*
+ * Get the activation type of a layer.
+ *
+ * @param layer Layer index
+ * @return Activation type (0=Sigmoid, 1=Tanh, 2=ReLU, 3=Softmax)
+ */
+int32_t mlp_get_layer_activation(mlp_handle_t mlp, int32_t layer);
+
+/*
+ * Get Adam optimizer's first moment (M) for a weight.
+ */
+double mlp_get_weight_m(mlp_handle_t mlp, int32_t layer, int32_t neuron, int32_t weight_idx);
+
+/*
+ * Get Adam optimizer's second moment (V) for a weight.
+ */
+double mlp_get_weight_v(mlp_handle_t mlp, int32_t layer, int32_t neuron, int32_t weight_idx);
+
+/*
+ * Get Adam optimizer's first moment (M) for a bias.
+ */
+double mlp_get_bias_m(mlp_handle_t mlp, int32_t layer, int32_t neuron);
+
+/*
+ * Get Adam optimizer's second moment (V) for a bias.
+ */
+double mlp_get_bias_v(mlp_handle_t mlp, int32_t layer, int32_t neuron);
+
+/*
+ * Get activation histogram for a layer.
+ *
+ * @param layer Layer index
+ * @param bins Number of histogram bins
+ * @param output Buffer to receive histogram counts
+ * @param capacity Size of buffer
+ * @return Number of bins written
+ */
+int32_t mlp_get_activation_histogram(
+    mlp_handle_t mlp,
+    int32_t layer,
+    int32_t bins,
+    int32_t* output,
+    int32_t capacity
+);
+
+/*
+ * Get gradient histogram for a layer.
+ *
+ * @param layer Layer index
+ * @param bins Number of histogram bins
+ * @param output Buffer to receive histogram counts
+ * @param capacity Size of buffer
+ * @return Number of bins written
+ */
+int32_t mlp_get_gradient_histogram(
+    mlp_handle_t mlp,
+    int32_t layer,
+    int32_t bins,
+    int32_t* output,
+    int32_t capacity
+);
+
+/*
+ * Get Adam optimizer timestep.
+ *
+ * @return Current timestep value
+ */
+int32_t mlp_get_timestep(mlp_handle_t mlp);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>GlassBoxAI.MLP</RootNamespace>
+    <AssemblyName>GlassBoxAI.MLP</AssemblyName>
+    <PackageId>GlassBoxAI.MLP</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Matthew Abbott</Authors>
+    <Description>Transparent, verifiable multi-layer perceptron with GPU support, introspection, and explainable AI features</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/GlassBoxAI-dist/GlassBoxAI-MLP</RepositoryUrl>
+  </PropertyGroup>
+
+</Project>

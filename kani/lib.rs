@@ -11,5 +11,6 @@
 
 pub mod core_types;
 pub mod harnesses;
+pub mod ffi_boundary;
 
 pub use core_types::*;
