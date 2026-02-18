@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Internal_Logic
 // MLP module with security-focused implementations
 
 use std::collections::HashMap;
@@ -46,3 +48,4 @@ impl SecureMLP {
         !self.weights_hash.is_empty()
     }
 }
+

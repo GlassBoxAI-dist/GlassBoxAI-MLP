@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Internal_Logic
 use std::env;
 use std::process;
 
@@ -594,3 +596,4 @@ pub fn run() {
         _ => {}
     }
 }
+

@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Internal_Logic
 /*
  * MIT License
  * Copyright (c) 2025 Matthew Abbott
@@ -430,6 +432,176 @@ impl PyMLP {
         self.inner.GetLayerOutputs(layer)
     }
 
+    /// Get Adam optimizer timestep (number of training steps completed)
+    ///
+    /// Returns:
+    ///     int: Current timestep
+    #[getter]
+    fn timestep(&self) -> i32 {
+        self.inner.Timestep
+    }
+
+    /// Compute loss between output and target vectors
+    ///
+    /// Args:
+    ///     output (list[float]): Model output
+    ///     target (list[float]): Target values
+    ///
+    /// Returns:
+    ///     float: Loss value
+    fn compute_loss(&self, output: Vec<f64>, target: Vec<f64>) -> f64 {
+        self.inner.ComputeLoss(&output, &target)
+    }
+
+    /// Get per-neuron error/gradient values after the last training step
+    ///
+    /// Args:
+    ///     layer (int): Layer index
+    ///
+    /// Returns:
+    ///     list[float]: Error values for all neurons in the layer
+    fn get_layer_errors(&mut self, layer: i32) -> Vec<f64> {
+        self.inner.GetLayerErrors(layer)
+    }
+
+    /// Get the number of neurons in a layer
+    ///
+    /// Args:
+    ///     layer (int): Layer index
+    ///
+    /// Returns:
+    ///     int: Number of neurons
+    fn get_layer_size(&self, layer: i32) -> i32 {
+        self.inner.GetLayerSize(layer as usize) as i32
+    }
+
+    /// Get the activation function used by a layer
+    ///
+    /// Args:
+    ///     layer (int): Layer index
+    ///
+    /// Returns:
+    ///     PyActivationType: Activation type enum value
+    fn get_layer_activation(&self, layer: i32) -> PyActivationType {
+        PyActivationType::from(self.inner.GetLayerActivation(layer))
+    }
+
+    /// Get combined layer metadata
+    ///
+    /// Args:
+    ///     layer (int): Layer index
+    ///
+    /// Returns:
+    ///     dict: Dictionary with keys ``index`` (int), ``size`` (int),
+    ///           ``activation`` (PyActivationType)
+    fn get_layer_info<'py>(&self, py: Python<'py>, layer: i32) -> PyResult<pyo3::Bound<'py, pyo3::types::PyDict>> {
+        let dict = pyo3::types::PyDict::new_bound(py);
+        dict.set_item("index", layer)?;
+        dict.set_item("size", self.inner.GetLayerSize(layer as usize) as i32)?;
+        dict.set_item("activation", PyActivationType::from(self.inner.GetLayerActivation(layer)))?;
+        Ok(dict)
+    }
+
+    /// Get detailed per-neuron introspection view
+    ///
+    /// Args:
+    ///     layer (int): Layer index
+    ///     neuron (int): Neuron index within the layer
+    ///
+    /// Returns:
+    ///     dict: Dictionary with keys ``layer``, ``neuron``, ``weights`` (list[float]),
+    ///           ``bias`` (float), ``output`` (float), ``error`` (float)
+    fn get_neuron_view<'py>(&mut self, py: Python<'py>, layer: i32, neuron: i32) -> PyResult<pyo3::Bound<'py, pyo3::types::PyDict>> {
+        let dict = pyo3::types::PyDict::new_bound(py);
+        let weights = self.inner.GetNeuronWeights(layer, neuron);
+        let bias = self.inner.GetNeuronBias(layer, neuron);
+        let outputs = self.inner.GetLayerOutputs(layer);
+        let errors = self.inner.GetLayerErrors(layer);
+        let output_val = outputs.get(neuron as usize).copied().unwrap_or(0.0);
+        let error_val = errors.get(neuron as usize).copied().unwrap_or(0.0);
+        dict.set_item("layer", layer)?;
+        dict.set_item("neuron", neuron)?;
+        dict.set_item("weights", weights)?;
+        dict.set_item("bias", bias)?;
+        dict.set_item("output", output_val)?;
+        dict.set_item("error", error_val)?;
+        Ok(dict)
+    }
+
+    /// Get Adam first moment (M) for a specific weight
+    ///
+    /// Args:
+    ///     layer (int): Layer index
+    ///     neuron (int): Neuron index
+    ///     weight_idx (int): Weight index within the neuron
+    ///
+    /// Returns:
+    ///     float: First moment estimate
+    fn get_weight_m(&self, layer: i32, neuron: i32, weight_idx: i32) -> f64 {
+        self.inner.GetWeightM(layer, neuron, weight_idx)
+    }
+
+    /// Get Adam second moment (V) for a specific weight
+    ///
+    /// Args:
+    ///     layer (int): Layer index
+    ///     neuron (int): Neuron index
+    ///     weight_idx (int): Weight index within the neuron
+    ///
+    /// Returns:
+    ///     float: Second moment estimate
+    fn get_weight_v(&self, layer: i32, neuron: i32, weight_idx: i32) -> f64 {
+        self.inner.GetWeightV(layer, neuron, weight_idx)
+    }
+
+    /// Get Adam first moment (M) for a specific bias
+    ///
+    /// Args:
+    ///     layer (int): Layer index
+    ///     neuron (int): Neuron index
+    ///
+    /// Returns:
+    ///     float: First moment estimate
+    fn get_bias_m(&self, layer: i32, neuron: i32) -> f64 {
+        self.inner.GetBiasM(layer, neuron)
+    }
+
+    /// Get Adam second moment (V) for a specific bias
+    ///
+    /// Args:
+    ///     layer (int): Layer index
+    ///     neuron (int): Neuron index
+    ///
+    /// Returns:
+    ///     float: Second moment estimate
+    fn get_bias_v(&self, layer: i32, neuron: i32) -> f64 {
+        self.inner.GetBiasV(layer, neuron)
+    }
+
+    /// Get a histogram of activation values across all neurons in a layer
+    ///
+    /// Args:
+    ///     layer (int): Layer index
+    ///     bins (int): Number of histogram bins
+    ///
+    /// Returns:
+    ///     list[int]: Per-bin counts
+    fn get_activation_histogram(&self, layer: i32, bins: i32) -> Vec<i32> {
+        self.inner.GetActivationHistogram(layer, bins as usize)
+    }
+
+    /// Get a histogram of gradient values across all neurons in a layer
+    ///
+    /// Args:
+    ///     layer (int): Layer index
+    ///     bins (int): Number of histogram bins
+    ///
+    /// Returns:
+    ///     list[int]: Per-bin counts
+    fn get_gradient_histogram(&self, layer: i32, bins: i32) -> Vec<i32> {
+        self.inner.GetGradientHistogram(layer, bins as usize)
+    }
+
     /// Get model info as string
     fn __repr__(&self) -> String {
         format!(
@@ -507,3 +679,4 @@ fn facaded_mlp_cuda(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(normalize, m)?)?;
     Ok(())
 }
+

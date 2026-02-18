@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification Harnesses for CISA Security Hardening
 //!
 //! This module contains formal verification proofs for the 15 security requirements.
@@ -910,3 +912,4 @@ mod unit_tests {
         assert!(huge.is_none());
     }
 }
+

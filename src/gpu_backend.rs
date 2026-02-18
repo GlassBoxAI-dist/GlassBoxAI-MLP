@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_GPU_Accelerated
 /*
  * MIT License
  * Copyright (c) 2025 Matthew Abbott
@@ -61,3 +63,4 @@ pub fn select_best_backend() -> TGPUBackend {
         TGPUBackend::CPU
     }
 }
+

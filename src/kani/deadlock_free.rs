@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: Deadlock-Free Logic
 //!
 //! Verify that locking mechanisms follow strict hierarchy and cannot enter
@@ -50,3 +52,4 @@ mod kani_proofs {
         }
     }
 }
+

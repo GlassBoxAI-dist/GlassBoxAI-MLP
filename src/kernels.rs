@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_GPU_Accelerated
 pub const CUDA_KERNEL_SRC: &str = r#"
 extern "C" {
 
@@ -291,3 +293,4 @@ pub const KERNEL_NAMES: &[&str] = &[
     "BatchNormBackwardKernel",
     "ComputeBatchStatsKernel",
 ];
+

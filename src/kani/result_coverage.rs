@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: Result Coverage Audit
 //!
 //! Verify that all Error variants in returned Result types are explicitly
@@ -63,3 +65,4 @@ mod kani_proofs {
         }
     }
 }
+

@@ -1,4 +1,8 @@
 /**
+ * @file
+ * @ingroup MLP_Internal_Logic
+ */
+/**
  * Facaded MLP CUDA/OpenCL - GPU-accelerated Multi-Layer Perceptron
  */
 

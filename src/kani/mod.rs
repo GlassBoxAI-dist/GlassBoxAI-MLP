@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification Test Suite for GlassBoxAI MLP
 //!
 //! Formal verification harnesses following CISA "Secure by Design" standards.
@@ -26,3 +28,4 @@ pub mod ffi_opencl;
 pub mod ffi_c_boundary;
 
 pub use core_types::*;
+

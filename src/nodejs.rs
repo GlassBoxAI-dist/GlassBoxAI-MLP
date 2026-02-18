@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Wrappers
 /*
  * MIT License
  * Copyright (c) 2025 Matthew Abbott
@@ -496,3 +498,4 @@ pub fn normalize(inputs: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
 
     data.iter().map(|dp| dp.Input.clone()).collect()
 }
+

@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Internal_Logic
 /*
  * MIT License
  * Copyright (c) 2025 Matthew Abbott
@@ -1207,3 +1209,4 @@ pub fn MaxIndex(arr: &[f64]) -> usize {
     
     max_idx
 }
+

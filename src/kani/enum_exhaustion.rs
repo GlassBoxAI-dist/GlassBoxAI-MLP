@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: Enum Exhaustion
 //!
 //! Verify that all match statements handle every possible variant without
@@ -62,3 +64,4 @@ mod kani_proofs {
         );
     }
 }
+

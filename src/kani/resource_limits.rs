@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: Resource Limit Compliance
 //!
 //! Verify that memory allocations never exceed a specified symbolic threshold
@@ -67,3 +69,4 @@ mod kani_proofs {
         kani::assert(total_bytes < MEMORY_BUDGET, "3-layer MLP within memory budget");
     }
 }
+

@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: Integer Overflow Prevention
 //!
 //! Prove that all arithmetic operations are safe from wrapping, overflowing,
@@ -81,3 +83,4 @@ mod unit_tests {
         assert_eq!(safe_div(10, 0), None);
     }
 }
+

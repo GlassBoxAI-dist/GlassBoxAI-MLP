@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: FFI Boundary Safety (CISA/NSA Compliance)
 //!
 //! Proves that all data crossing the C FFI boundary is validated before use.
@@ -873,3 +875,4 @@ mod unit_tests {
         assert!(validate_optimizer_i32(-1).is_none());
     }
 }
+

@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: Strict Bound Checks
 //!
 //! Prove that all collection indexing is mathematically incapable of
@@ -114,3 +116,4 @@ mod unit_tests {
         assert!(layer.get_weight(0, 4).is_none());
     }
 }
+

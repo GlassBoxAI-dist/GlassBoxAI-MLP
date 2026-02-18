@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Core types mirrored from main MLP implementation for verification.
 //! 
 //! These types are standalone to allow Kani verification without CUDA dependencies.
@@ -425,3 +427,4 @@ pub fn validate_optimizer_i32(val: i32) -> Option<TOptimizerType> {
         _ => None,
     }
 }
+

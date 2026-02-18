@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: Memory Leak/Leakage Proofs
 //!
 //! Prove that all allocated memory is either freed or remains reachable.
@@ -54,3 +56,4 @@ mod unit_tests {
         assert!(huge.is_none());
     }
 }
+

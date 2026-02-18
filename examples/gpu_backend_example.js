@@ -1,3 +1,7 @@
+/**
+ * @file
+ * @ingroup MLP_Internal_Logic
+ */
 #!/usr/bin/env node
 /**
  * Example showing how to use different GPU backends

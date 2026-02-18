@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Internal_Logic
 /*
  * MIT License
  * Copyright (c) 2025 Matthew Abbott
@@ -275,3 +277,4 @@ __kernel void applyDropoutKernel(
     }
 }
 "#;
+

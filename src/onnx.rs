@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Internal_Logic
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 
@@ -327,3 +329,4 @@ pub struct FunctionProto {
     #[prost(string, tag = "10")]
     pub domain: String,
 }
+

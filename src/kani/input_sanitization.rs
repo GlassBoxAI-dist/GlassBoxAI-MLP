@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: Input Sanitization Bounds
 //!
 //! Prove that any input-driven loop or recursion has a formal upper bound
@@ -72,3 +74,4 @@ mod kani_proofs {
         }
     }
 }
+

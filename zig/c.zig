@@ -1,3 +1,7 @@
+/**
+ * @file
+ * @ingroup MLP_Wrappers
+ */
 // MIT License
 // Copyright (c) 2025 Matthew Abbott
 //
@@ -152,3 +156,4 @@ pub extern fn mlp_get_gradient_histogram(
     output: [*]i32,
     capacity: i32,
 ) i32;
+

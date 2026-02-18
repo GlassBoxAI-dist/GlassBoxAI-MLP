@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Internal_Logic
 /*
  * MIT License
  * Copyright (c) 2025 Matthew Abbott
@@ -168,3 +170,4 @@ impl TOpenCLContext {
         Err("OpenCL support not compiled".to_string())
     }
 }
+

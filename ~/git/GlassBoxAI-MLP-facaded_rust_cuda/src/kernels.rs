@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_GPU_Accelerated
 // CUDA kernels for MLP operations (placeholder)
 // This would contain actual CUDA kernel implementations
 
@@ -20,3 +22,4 @@ impl CudaKernels {
         vec![0.0; 100] // Placeholder return
     }
 }
+

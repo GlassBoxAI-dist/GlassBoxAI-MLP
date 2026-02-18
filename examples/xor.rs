@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Internal_Logic
 //! XOR Example - Demonstrates basic MLP usage with introspection
 //!
 //! This example shows how to:
@@ -151,3 +153,4 @@ fn main() -> Result<(), String> {
     println!("\n=== Done! ===");
     Ok(())
 }
+

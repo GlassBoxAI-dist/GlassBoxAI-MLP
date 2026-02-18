@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: Constant-Time Execution (Security)
 //!
 //! Verify that branching logic does not depend on secret/sensitive values
@@ -46,3 +48,4 @@ mod kani_proofs {
         );
     }
 }
+

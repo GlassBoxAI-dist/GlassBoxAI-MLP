@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Internal_Logic
 // CLI interface for the MLP application
 use std::env;
 use std::process;
@@ -23,3 +25,4 @@ pub fn handle_args(args: &[String]) {
     
     // Add more argument handling as needed
 }
+

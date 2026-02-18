@@ -1,3 +1,7 @@
+/**
+ * @file
+ * @ingroup MLP_Internal_Logic
+ */
 /*
  * MIT License
  * Copyright (c) 2025 Matthew Abbott
@@ -345,6 +349,25 @@ int32_t mlp_get_gradient_histogram(
  * @return Current timestep value
  */
 int32_t mlp_get_timestep(mlp_handle_t mlp);
+
+/*
+ * Export model to an ONNX file.
+ *
+ * @param mlp      Model handle
+ * @param filename Destination path (UTF-8)
+ * @return 0 on success, negative on error. Call mlp_get_last_error() for details.
+ */
+int32_t mlp_export_onnx(mlp_handle_t mlp, const char* filename);
+
+/*
+ * Import a model from an ONNX file and create a new handle.
+ *
+ * @param filename Path to the ONNX file (UTF-8)
+ * @param backend  GPU backend string: "auto", "cpu", "cuda", "opencl"
+ * @return New model handle, or NULL on error. Call mlp_get_last_error() for details.
+ *         Caller must free with mlp_destroy().
+ */
+mlp_handle_t mlp_import_onnx(const char* filename, const char* backend);
 
 #ifdef __cplusplus
 }

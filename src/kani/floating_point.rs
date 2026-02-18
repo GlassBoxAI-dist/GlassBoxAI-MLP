@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: Floating-Point Sanity
 //!
 //! Prove that operations involving f32/f64 never result in unhandled NaN or
@@ -90,3 +92,4 @@ mod unit_tests {
         assert!(!is_fp_sane(f64::INFINITY));
     }
 }
+

@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Internal_Logic
 /*
  * MIT License
  * Copyright (c) 2025 Matthew Abbott
@@ -14,3 +16,4 @@ fn main() {
     eprintln!("Build with: cargo build --features cli");
     std::process::exit(1);
 }
+

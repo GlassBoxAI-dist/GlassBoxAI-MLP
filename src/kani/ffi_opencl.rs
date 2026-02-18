@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: FFI Safety for OpenCL Backend
 //!
 //! Verify that all data passed across the OpenCL FFI boundary is valid:
@@ -134,3 +136,4 @@ mod kani_proofs {
             "Weight count must not overflow before OpenCL buffer creation");
     }
 }
+

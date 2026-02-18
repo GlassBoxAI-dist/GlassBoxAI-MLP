@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: Division-by-Zero Exclusion
 //!
 //! Verify that any denominator derived from variable/external input is
@@ -51,3 +53,4 @@ mod kani_proofs {
         kani::assert(sum_exp > 0.0, "Softmax denominator must be positive");
     }
 }
+

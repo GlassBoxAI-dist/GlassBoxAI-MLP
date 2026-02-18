@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: No-Panic Guarantee
 //!
 //! Verify that target functions cannot trigger panic!, unwrap(), or expect()
@@ -82,3 +84,4 @@ mod unit_tests {
         assert_eq!(relu(1.0), 1.0);
     }
 }
+

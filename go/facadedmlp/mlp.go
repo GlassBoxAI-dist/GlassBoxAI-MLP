@@ -1,3 +1,7 @@
+/**
+ * @file
+ * @ingroup MLP_Wrappers
+ */
 // Package facadedmlp provides Go bindings for the GlassBoxAI MLP library.
 //
 // This package provides a GPU-accelerated Multi-Layer Perceptron implementation
@@ -86,6 +90,25 @@ extern int32_t mlp_get_layer_outputs(mlp_handle_t mlp, int32_t layer, double* ou
     int32_t capacity);
 extern int32_t mlp_feature_importance(mlp_handle_t mlp, int32_t* indices, double* scores,
     int32_t capacity);
+
+// Advanced introspection
+extern int32_t mlp_get_layer_errors(mlp_handle_t mlp, int32_t layer, double* output,
+    int32_t capacity);
+extern int32_t mlp_get_layer_size(mlp_handle_t mlp, int32_t layer);
+extern int32_t mlp_get_layer_activation(mlp_handle_t mlp, int32_t layer);
+extern double mlp_get_weight_m(mlp_handle_t mlp, int32_t layer, int32_t neuron,
+    int32_t weight_idx);
+extern double mlp_get_weight_v(mlp_handle_t mlp, int32_t layer, int32_t neuron,
+    int32_t weight_idx);
+extern double mlp_get_bias_m(mlp_handle_t mlp, int32_t layer, int32_t neuron);
+extern double mlp_get_bias_v(mlp_handle_t mlp, int32_t layer, int32_t neuron);
+extern int32_t mlp_get_activation_histogram(mlp_handle_t mlp, int32_t layer, int32_t bins,
+    int32_t* output, int32_t capacity);
+extern int32_t mlp_get_gradient_histogram(mlp_handle_t mlp, int32_t layer, int32_t bins,
+    int32_t* output, int32_t capacity);
+extern int32_t mlp_get_timestep(mlp_handle_t mlp);
+extern int32_t mlp_export_onnx(mlp_handle_t mlp, const char* filename);
+extern mlp_handle_t mlp_import_onnx(const char* filename, const char* backend);
 */
 import "C"
 
@@ -196,6 +219,7 @@ type LayerInfo struct {
 	Index            int
 	Size             int
 	WeightsPerNeuron int
+	Activation       ActivationType
 }
 
 // NeuronView provides a view into a single neuron.
@@ -204,6 +228,8 @@ type NeuronView struct {
 	Index   int
 	Weights []float64
 	Bias    float64
+	Output  float64
+	Error   float64
 }
 
 // MLP represents a Multi-Layer Perceptron neural network.
@@ -606,13 +632,24 @@ func (m *MLP) GetLayerOutputs(layer int) []float64 {
 	return outputs[:count]
 }
 
-// NeuronView returns a view of a specific neuron.
+// NeuronView returns a detailed view of a specific neuron.
 func (m *MLP) NeuronView(layer, neuron int) *NeuronView {
+	outputs := m.GetLayerOutputs(layer)
+	errors := m.GetLayerErrors(layer)
+	var outputVal, errorVal float64
+	if neuron < len(outputs) {
+		outputVal = outputs[neuron]
+	}
+	if neuron < len(errors) {
+		errorVal = errors[neuron]
+	}
 	return &NeuronView{
 		Layer:   layer,
 		Index:   neuron,
 		Weights: m.GetNeuronWeights(layer, neuron),
 		Bias:    m.GetNeuronBias(layer, neuron),
+		Output:  outputVal,
+		Error:   errorVal,
 	}
 }
 
@@ -636,6 +673,138 @@ func (m *MLP) FeatureImportance() []FeatureImportance {
 		}
 	}
 	return result
+}
+
+// Timestep returns the current Adam optimizer timestep.
+func (m *MLP) Timestep() int {
+	return int(C.mlp_get_timestep(m.handle))
+}
+
+// GetLayerErrors returns the error/gradient values for all neurons in a layer.
+func (m *MLP) GetLayerErrors(layer int) []float64 {
+	size := m.GetLayerSize(layer)
+	if size <= 0 {
+		return nil
+	}
+	errs := make([]float64, size)
+	count := C.mlp_get_layer_errors(
+		m.handle,
+		C.int32_t(layer),
+		(*C.double)(unsafe.Pointer(&errs[0])),
+		C.int32_t(size),
+	)
+	return errs[:count]
+}
+
+// GetLayerSize returns the number of neurons in a layer.
+func (m *MLP) GetLayerSize(layer int) int {
+	return int(C.mlp_get_layer_size(m.handle, C.int32_t(layer)))
+}
+
+// GetLayerActivation returns the activation function used by a layer.
+func (m *MLP) GetLayerActivation(layer int) ActivationType {
+	return ActivationType(C.mlp_get_layer_activation(m.handle, C.int32_t(layer)))
+}
+
+// GetLayerInfo returns combined metadata about a layer.
+func (m *MLP) GetLayerInfo(layer int) LayerInfo {
+	size := m.GetLayerSize(layer)
+	weightsPerNeuron := 0
+	if layer > 0 {
+		weightsPerNeuron = m.GetLayerSize(layer - 1)
+	}
+	return LayerInfo{
+		Index:            layer,
+		Size:             size,
+		WeightsPerNeuron: weightsPerNeuron,
+		Activation:       m.GetLayerActivation(layer),
+	}
+}
+
+// GetWeightM returns the Adam first moment (M) for a specific weight.
+func (m *MLP) GetWeightM(layer, neuron, weightIdx int) float64 {
+	return float64(C.mlp_get_weight_m(m.handle, C.int32_t(layer), C.int32_t(neuron),
+		C.int32_t(weightIdx)))
+}
+
+// GetWeightV returns the Adam second moment (V) for a specific weight.
+func (m *MLP) GetWeightV(layer, neuron, weightIdx int) float64 {
+	return float64(C.mlp_get_weight_v(m.handle, C.int32_t(layer), C.int32_t(neuron),
+		C.int32_t(weightIdx)))
+}
+
+// GetBiasM returns the Adam first moment (M) for a specific bias.
+func (m *MLP) GetBiasM(layer, neuron int) float64 {
+	return float64(C.mlp_get_bias_m(m.handle, C.int32_t(layer), C.int32_t(neuron)))
+}
+
+// GetBiasV returns the Adam second moment (V) for a specific bias.
+func (m *MLP) GetBiasV(layer, neuron int) float64 {
+	return float64(C.mlp_get_bias_v(m.handle, C.int32_t(layer), C.int32_t(neuron)))
+}
+
+// GetActivationHistogram returns a histogram of activation values for a layer.
+func (m *MLP) GetActivationHistogram(layer, bins int) []int {
+	hist := make([]C.int32_t, bins)
+	count := C.mlp_get_activation_histogram(
+		m.handle,
+		C.int32_t(layer),
+		C.int32_t(bins),
+		&hist[0],
+		C.int32_t(bins),
+	)
+	result := make([]int, count)
+	for i := 0; i < int(count); i++ {
+		result[i] = int(hist[i])
+	}
+	return result
+}
+
+// GetGradientHistogram returns a histogram of gradient values for a layer.
+func (m *MLP) GetGradientHistogram(layer, bins int) []int {
+	hist := make([]C.int32_t, bins)
+	count := C.mlp_get_gradient_histogram(
+		m.handle,
+		C.int32_t(layer),
+		C.int32_t(bins),
+		&hist[0],
+		C.int32_t(bins),
+	)
+	result := make([]int, count)
+	for i := 0; i < int(count); i++ {
+		result[i] = int(hist[i])
+	}
+	return result
+}
+
+// ExportONNX exports the model to an ONNX file.
+func (m *MLP) ExportONNX(filename string) error {
+	cFilename := C.CString(filename)
+	defer C.free(unsafe.Pointer(cFilename))
+	result := C.mlp_export_onnx(m.handle, cFilename)
+	if result != 0 {
+		return getLastError()
+	}
+	return nil
+}
+
+// ImportONNX loads an MLP from an ONNX file and returns a new instance.
+func ImportONNX(filename string, backend BackendType) (*MLP, error) {
+	cFilename := C.CString(filename)
+	defer C.free(unsafe.Pointer(cFilename))
+	cBackend := C.CString(string(backend))
+	defer C.free(unsafe.Pointer(cBackend))
+
+	handle := C.mlp_import_onnx(cFilename, cBackend)
+	if handle == nil {
+		return nil, getLastError()
+	}
+
+	mlp := &MLP{handle: handle}
+	mlp.inputSize = int(C.mlp_get_input_size(handle))
+	mlp.outputSize = int(C.mlp_get_output_size(handle))
+	mlp.hiddenSizes = mlp.getHiddenSizesInternal()
+	return mlp, nil
 }
 
 // Utility functions

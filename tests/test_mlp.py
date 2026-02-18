@@ -1,3 +1,5 @@
+## @file
+## @ingroup MLP_Internal_Logic
 import pytest
 from facaded_mlp_cuda import MLP, PyActivationType, PyOptimizerType
 

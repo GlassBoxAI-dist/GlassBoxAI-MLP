@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Internal_Logic
 // Main MLP implementation with security and compliance features
 #![allow(dead_code)]
 
@@ -484,3 +486,4 @@ fn main() {
         compliance_gaps::suggest_weight_decay_fix();
     }
 }
+

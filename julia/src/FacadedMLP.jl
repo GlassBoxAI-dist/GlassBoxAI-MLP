@@ -1,3 +1,5 @@
+## @file
+## @ingroup MLP_Wrappers
 """
     FacadedMLP
 
@@ -28,6 +30,10 @@ export save, load, feature_importance
 export available_backends, set_backend!
 export get_neuron_weights, get_neuron_bias, set_neuron_weight!, set_neuron_bias!
 export get_layer_outputs
+export compute_loss, get_layer_errors, get_layer_size, get_layer_activation, get_layer_info
+export get_neuron_view, get_weight_m, get_weight_v, get_bias_m, get_bias_v
+export get_activation_histogram, get_gradient_histogram
+export export_onnx, import_onnx
 
 # Activation types
 @enum ActivationType begin
@@ -275,6 +281,82 @@ function c_feature_importance(ptr::Ptr{Cvoid}, input_size::Int)
     [(Int(idx), score) for (idx, score) in zip(indices, scores)]
 end
 
+function c_get_layer_errors(ptr::Ptr{Cvoid}, layer::Int, max_size::Int)
+    errs = Vector{Float64}(undef, max_size)
+    len = ccall((:mlp_get_layer_errors, LIBMLP[]), Int32,
+        (Ptr{Cvoid}, Int32, Ptr{Float64}, Int32),
+        ptr, Int32(layer), errs, Int32(max_size))
+    resize!(errs, max(0, len))
+    errs
+end
+
+function c_get_layer_size(ptr::Ptr{Cvoid}, layer::Int)
+    Int(ccall((:mlp_get_layer_size, LIBMLP[]), Int32, (Ptr{Cvoid}, Int32), ptr, Int32(layer)))
+end
+
+function c_get_layer_activation(ptr::Ptr{Cvoid}, layer::Int)
+    ccall((:mlp_get_layer_activation, LIBMLP[]), Int32, (Ptr{Cvoid}, Int32), ptr, Int32(layer))
+end
+
+function c_get_weight_m(ptr::Ptr{Cvoid}, layer::Int, neuron::Int, weight_idx::Int)
+    ccall((:mlp_get_weight_m, LIBMLP[]), Float64,
+        (Ptr{Cvoid}, Int32, Int32, Int32), ptr, Int32(layer), Int32(neuron), Int32(weight_idx))
+end
+
+function c_get_weight_v(ptr::Ptr{Cvoid}, layer::Int, neuron::Int, weight_idx::Int)
+    ccall((:mlp_get_weight_v, LIBMLP[]), Float64,
+        (Ptr{Cvoid}, Int32, Int32, Int32), ptr, Int32(layer), Int32(neuron), Int32(weight_idx))
+end
+
+function c_get_bias_m(ptr::Ptr{Cvoid}, layer::Int, neuron::Int)
+    ccall((:mlp_get_bias_m, LIBMLP[]), Float64,
+        (Ptr{Cvoid}, Int32, Int32), ptr, Int32(layer), Int32(neuron))
+end
+
+function c_get_bias_v(ptr::Ptr{Cvoid}, layer::Int, neuron::Int)
+    ccall((:mlp_get_bias_v, LIBMLP[]), Float64,
+        (Ptr{Cvoid}, Int32, Int32), ptr, Int32(layer), Int32(neuron))
+end
+
+function c_get_activation_histogram(ptr::Ptr{Cvoid}, layer::Int, bins::Int)
+    hist = Vector{Int32}(undef, bins)
+    len = ccall((:mlp_get_activation_histogram, LIBMLP[]), Int32,
+        (Ptr{Cvoid}, Int32, Int32, Ptr{Int32}, Int32),
+        ptr, Int32(layer), Int32(bins), hist, Int32(bins))
+    resize!(hist, max(0, len))
+    Int.(hist)
+end
+
+function c_get_gradient_histogram(ptr::Ptr{Cvoid}, layer::Int, bins::Int)
+    hist = Vector{Int32}(undef, bins)
+    len = ccall((:mlp_get_gradient_histogram, LIBMLP[]), Int32,
+        (Ptr{Cvoid}, Int32, Int32, Ptr{Int32}, Int32),
+        ptr, Int32(layer), Int32(bins), hist, Int32(bins))
+    resize!(hist, max(0, len))
+    Int.(hist)
+end
+
+function c_get_timestep(ptr::Ptr{Cvoid})
+    Int(ccall((:mlp_get_timestep, LIBMLP[]), Int32, (Ptr{Cvoid},), ptr))
+end
+
+function c_export_onnx(ptr::Ptr{Cvoid}, filename::String)
+    status = ccall((:mlp_export_onnx, LIBMLP[]), Int32, (Ptr{Cvoid}, Cstring), ptr, filename)
+    if status != 0
+        error_msg = c_get_last_error()
+        error("ONNX export failed: $error_msg")
+    end
+end
+
+function c_import_onnx(filename::String, backend::String)
+    ptr = ccall((:mlp_import_onnx, LIBMLP[]), Ptr{Cvoid}, (Cstring, Cstring), filename, backend)
+    if ptr == C_NULL
+        error_msg = c_get_last_error()
+        error("ONNX import failed: $error_msg")
+    end
+    ptr
+end
+
 # MLP struct
 
 """
@@ -369,7 +451,7 @@ end
 # Properties
 Base.propertynames(::MLP) = (:learning_rate, :optimizer, :dropout_rate, :l2_lambda,
                               :batch_norm, :backend, :num_layers, :input_size,
-                              :output_size, :hidden_sizes)
+                              :output_size, :hidden_sizes, :timestep)
 
 function Base.getproperty(mlp::MLP, name::Symbol)
     if name === :ptr || name === :input_size || name === :output_size || name === :hidden_sizes
@@ -388,6 +470,8 @@ function Base.getproperty(mlp::MLP, name::Symbol)
         return c_get_backend(mlp.ptr)
     elseif name === :num_layers
         return c_get_num_layers(mlp.ptr)
+    elseif name === :timestep
+        return c_get_timestep(mlp.ptr)
     else
         error("Unknown property: $name")
     end
@@ -643,6 +727,144 @@ function get_layer_outputs(mlp::MLP, layer::Int)
         mlp.output_size
     end
     c_get_layer_outputs(mlp.ptr, layer, layer_size)
+end
+
+"""
+    compute_loss(mlp, output, target) -> Float64
+
+Compute the loss between model output and target vectors.
+"""
+function compute_loss(mlp::MLP, output::AbstractVector{<:Real}, target::AbstractVector{<:Real})
+    c_compute_loss(mlp.ptr, Float64.(output), Float64.(target))
+end
+
+"""
+    get_layer_size(mlp, layer) -> Int
+
+Return the number of neurons in a layer.
+"""
+function get_layer_size(mlp::MLP, layer::Int)
+    c_get_layer_size(mlp.ptr, layer)
+end
+
+"""
+    get_layer_activation(mlp, layer) -> ActivationType
+
+Return the activation function used by a layer.
+"""
+function get_layer_activation(mlp::MLP, layer::Int)
+    ActivationType(c_get_layer_activation(mlp.ptr, layer))
+end
+
+"""
+    get_layer_errors(mlp, layer) -> Vector{Float64}
+
+Return the error/gradient values for all neurons in a layer after the last training step.
+"""
+function get_layer_errors(mlp::MLP, layer::Int)
+    size = c_get_layer_size(mlp.ptr, layer)
+    size <= 0 && return Float64[]
+    c_get_layer_errors(mlp.ptr, layer, size)
+end
+
+"""
+    get_layer_info(mlp, layer) -> NamedTuple
+
+Return combined metadata about a layer: `(index, size, activation)`.
+"""
+function get_layer_info(mlp::MLP, layer::Int)
+    (index = layer,
+     size = c_get_layer_size(mlp.ptr, layer),
+     activation = ActivationType(c_get_layer_activation(mlp.ptr, layer)))
+end
+
+"""
+    get_neuron_view(mlp, layer, neuron) -> NamedTuple
+
+Return a detailed per-neuron view: `(layer, neuron, weights, bias, output, error)`.
+"""
+function get_neuron_view(mlp::MLP, layer::Int, neuron::Int)
+    weights = get_neuron_weights(mlp, layer, neuron)
+    bias    = c_get_neuron_bias(mlp.ptr, layer, neuron)
+    outputs = get_layer_outputs(mlp, layer)
+    errors  = get_layer_errors(mlp, layer)
+    out_val = neuron <= length(outputs) ? outputs[neuron] : 0.0
+    err_val = neuron <= length(errors)  ? errors[neuron]  : 0.0
+    (layer = layer, neuron = neuron, weights = weights,
+     bias = bias, output = out_val, error = err_val)
+end
+
+"""
+    get_weight_m(mlp, layer, neuron, weight_idx) -> Float64
+
+Return the Adam first moment (M) for a specific weight.
+"""
+function get_weight_m(mlp::MLP, layer::Int, neuron::Int, weight_idx::Int)
+    c_get_weight_m(mlp.ptr, layer, neuron, weight_idx)
+end
+
+"""
+    get_weight_v(mlp, layer, neuron, weight_idx) -> Float64
+
+Return the Adam second moment (V) for a specific weight.
+"""
+function get_weight_v(mlp::MLP, layer::Int, neuron::Int, weight_idx::Int)
+    c_get_weight_v(mlp.ptr, layer, neuron, weight_idx)
+end
+
+"""
+    get_bias_m(mlp, layer, neuron) -> Float64
+
+Return the Adam first moment (M) for a specific bias.
+"""
+function get_bias_m(mlp::MLP, layer::Int, neuron::Int)
+    c_get_bias_m(mlp.ptr, layer, neuron)
+end
+
+"""
+    get_bias_v(mlp, layer, neuron) -> Float64
+
+Return the Adam second moment (V) for a specific bias.
+"""
+function get_bias_v(mlp::MLP, layer::Int, neuron::Int)
+    c_get_bias_v(mlp.ptr, layer, neuron)
+end
+
+"""
+    get_activation_histogram(mlp, layer, bins) -> Vector{Int}
+
+Return a histogram of activation values across all neurons in a layer.
+"""
+function get_activation_histogram(mlp::MLP, layer::Int, bins::Int)
+    c_get_activation_histogram(mlp.ptr, layer, bins)
+end
+
+"""
+    get_gradient_histogram(mlp, layer, bins) -> Vector{Int}
+
+Return a histogram of gradient values across all neurons in a layer.
+"""
+function get_gradient_histogram(mlp::MLP, layer::Int, bins::Int)
+    c_get_gradient_histogram(mlp.ptr, layer, bins)
+end
+
+"""
+    export_onnx(mlp, filename)
+
+Export the model to an ONNX file.
+"""
+function export_onnx(mlp::MLP, filename::AbstractString)
+    c_export_onnx(mlp.ptr, String(filename))
+end
+
+"""
+    import_onnx(filename; backend="auto") -> MLP
+
+Load an MLP from an ONNX file and return a new instance.
+"""
+function import_onnx(filename::AbstractString; backend::String = "auto")
+    ptr = c_import_onnx(String(filename), backend)
+    MLP(ptr)
 end
 
 end # module

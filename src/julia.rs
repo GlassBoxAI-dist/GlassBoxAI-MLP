@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Internal_Logic
 /*
  * MIT License
  * Copyright (c) 2025 Matthew Abbott
@@ -660,6 +662,73 @@ pub extern "C" fn mlp_get_timestep(mlp: *const JuliaMLP) -> i32 {
     unsafe { (*mlp).inner.Timestep }
 }
 
+/// Export model to ONNX file
+///
+/// # Returns
+/// 0 on success, negative on error. Call `mlp_get_last_error()` for details.
+#[no_mangle]
+pub extern "C" fn mlp_export_onnx(mlp: *const JuliaMLP, filename: *const c_char) -> i32 {
+    if mlp.is_null() || filename.is_null() {
+        set_error("Null pointer".to_string());
+        return JuliaStatus::InvalidArg as i32;
+    }
+
+    let path = unsafe { CStr::from_ptr(filename) }
+        .to_str()
+        .unwrap_or("");
+
+    match unsafe { (*mlp).inner.export_to_onnx(path) } {
+        Ok(()) => JuliaStatus::Ok as i32,
+        Err(e) => {
+            set_error(e);
+            JuliaStatus::IoError as i32
+        }
+    }
+}
+
+/// Import model from ONNX file
+///
+/// # Arguments
+/// * `filename` - Path to the ONNX file
+/// * `backend`  - GPU backend string: "auto", "cpu", "cuda", "opencl"
+///
+/// # Returns
+/// New MLP handle on success, NULL on error. Call `mlp_get_last_error()` for details.
+#[no_mangle]
+pub extern "C" fn mlp_import_onnx(filename: *const c_char, backend: *const c_char) -> *mut JuliaMLP {
+    if filename.is_null() {
+        set_error("Null filename".to_string());
+        return ptr::null_mut();
+    }
+
+    let path = unsafe { CStr::from_ptr(filename) }
+        .to_str()
+        .unwrap_or("");
+
+    let gpu_backend = if backend.is_null() {
+        select_best_backend()
+    } else {
+        let s = unsafe { CStr::from_ptr(backend) }.to_str().unwrap_or("auto");
+        match s {
+            "cuda" => TGPUBackend::CUDA,
+            "opencl" | "ocl" => TGPUBackend::OpenCL,
+            "cpu" => TGPUBackend::CPU,
+            _ => select_best_backend(),
+        }
+    };
+
+    match TMultiLayerPerceptronCUDA::import_from_onnx(path) {
+        Ok(mut mlp) => {
+            let _ = mlp.set_backend(gpu_backend);
+            Box::into_raw(Box::new(JuliaMLP { inner: mlp }))
+        }
+        Err(e) => {
+            set_error(e);
+            ptr::null_mut()
+        }
+    }
+}
+
 // Helper functions
 
 fn int_to_activation(val: i32) -> TActivationType {
@@ -680,3 +749,4 @@ fn int_to_optimizer(val: i32) -> TOptimizerType {
         _ => TOptimizerType::otSGD,
     }
 }
+

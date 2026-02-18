@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: FFI Safety for CUDA Backend
 //!
 //! Verify that all data passed across the CUDA FFI boundary is valid:
@@ -120,3 +122,4 @@ mod kani_proofs {
             "Weight count must not overflow before CUDA allocation");
     }
 }
+

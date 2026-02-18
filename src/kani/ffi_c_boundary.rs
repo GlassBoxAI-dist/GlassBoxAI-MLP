@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: C FFI Boundary Safety (CISA/NSA Compliance)
 //!
 //! Proves that all data crossing the C FFI boundary is validated before use.
@@ -531,3 +533,4 @@ mod kani_proofs {
         kani::assert(guard, "Valid params must pass setter guard");
     }
 }
+

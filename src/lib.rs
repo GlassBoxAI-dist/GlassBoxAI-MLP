@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Internal_Logic
 /*
  * MIT License
  * Copyright (c) 2025 Matthew Abbott
@@ -311,3 +313,4 @@ mod tests {
         assert_eq!(importance.len(), 2);
     }
 }
+

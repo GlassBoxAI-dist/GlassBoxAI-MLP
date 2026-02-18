@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: Pointer Validity Proofs
 //!
 //! Verify that all raw pointer dereferences are valid, aligned, and point to
@@ -45,3 +47,4 @@ mod kani_proofs {
         }
     }
 }
+

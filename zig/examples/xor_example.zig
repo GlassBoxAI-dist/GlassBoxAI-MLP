@@ -1,3 +1,7 @@
+/**
+ * @file
+ * @ingroup MLP_Wrappers
+ */
 // XOR Example - Demonstrates basic MLP usage in Zig
 //
 // Build:
@@ -105,3 +109,4 @@ pub fn main() !void {
 
     try writer.print("\nDone!\n", .{});
 }
+

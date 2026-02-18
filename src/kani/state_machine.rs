@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: State Machine Integrity
 //!
 //! Prove that the system cannot transition from "Lower Privilege" to
@@ -66,3 +68,4 @@ mod unit_tests {
         assert!(!check_privilege_transition(PrivilegeLevel::Unprivileged, PrivilegeLevel::Elevated));
     }
 }
+

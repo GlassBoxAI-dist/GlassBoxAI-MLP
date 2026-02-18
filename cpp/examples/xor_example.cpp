@@ -1,3 +1,7 @@
+/**
+ * @file
+ * @ingroup MLP_Internal_Logic
+ */
 /*
  * XOR Example - Demonstrates basic MLP usage
  *
@@ -89,3 +93,4 @@ int main() {
     std::cout << "\nDone!" << std::endl;
     return 0;
 }
+

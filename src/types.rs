@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Internal_Logic
 /*
  * MIT License
  * Copyright (c) 2025 Matthew Abbott
@@ -268,3 +270,4 @@ pub struct FeatureImportance {
     /// Importance score (higher = more important)
     pub score: f64,
 }
+

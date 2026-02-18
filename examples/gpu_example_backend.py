@@ -1,3 +1,5 @@
+## @file
+## @ingroup MLP_Internal_Logic
 #!/usr/bin/env python3
 """
 Example showing how to use different GPU backends

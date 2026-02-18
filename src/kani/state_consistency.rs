@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification: Global State Consistency
 //!
 //! Prove that concurrent access to shared state maintains defined invariants
@@ -50,3 +52,4 @@ mod kani_proofs {
         kani::assert(layer.weights.len() == num_neurons * num_inputs, "Weight array size invariant");
     }
 }
+

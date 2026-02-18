@@ -1,3 +1,5 @@
+## @file
+## @ingroup MLP_Internal_Logic
 #!/usr/bin/env python3
 """
 XOR problem example using facaded_mlp_cuda

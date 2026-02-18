@@ -1,3 +1,7 @@
+/**
+ * @file
+ * @ingroup MLP_Wrappers
+ */
 // XOR Example - Demonstrates basic MLP usage with introspection
 //
 // Build:

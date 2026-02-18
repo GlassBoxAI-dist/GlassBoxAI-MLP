@@ -1,3 +1,7 @@
+/**
+ * @file
+ * @ingroup MLP_Internal_Logic
+ */
 #!/usr/bin/env node
 /**
  * XOR problem example using facaded-mlp-cuda

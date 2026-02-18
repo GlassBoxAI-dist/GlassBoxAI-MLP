@@ -1,4 +1,8 @@
 /**
+ * @file
+ * @ingroup MLP_Wrappers
+ */
+/**
  * Facaded MLP CUDA/OpenCL - GPU-accelerated Multi-Layer Perceptron
  *
  * @example

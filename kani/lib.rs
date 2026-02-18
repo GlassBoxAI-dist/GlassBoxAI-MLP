@@ -1,3 +1,5 @@
+//! @file
+//! @ingroup MLP_Core_Verified
 //! Kani Verification Test Suite for Facaded MLP CUDA
 //! 
 //! This module provides formal verification harnesses following CISA "Secure by Design"
@@ -14,3 +16,4 @@ pub mod harnesses;
 pub mod ffi_boundary;
 
 pub use core_types::*;
+
