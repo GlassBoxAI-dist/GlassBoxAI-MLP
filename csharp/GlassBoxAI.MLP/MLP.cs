@@ -382,6 +382,43 @@ namespace GlassBoxAI.MLP
             return hist;
         }
 
+        public void SetWeightM(int layer, int neuron, int weightIdx, double value)
+        {
+            NativeMethods.mlp_set_weight_m(_handle, layer, neuron, weightIdx, value);
+        }
+
+        public void SetWeightV(int layer, int neuron, int weightIdx, double value)
+        {
+            NativeMethods.mlp_set_weight_v(_handle, layer, neuron, weightIdx, value);
+        }
+
+        public void SetBiasM(int layer, int neuron, double value)
+        {
+            NativeMethods.mlp_set_bias_m(_handle, layer, neuron, value);
+        }
+
+        public void SetBiasV(int layer, int neuron, double value)
+        {
+            NativeMethods.mlp_set_bias_v(_handle, layer, neuron, value);
+        }
+
+        public void SetTimestep(int value)
+        {
+            NativeMethods.mlp_set_timestep(_handle, value);
+        }
+
+        public void SetLayerActivation(int layer, ActivationType activation)
+        {
+            NativeMethods.mlp_set_layer_activation(_handle, layer, (int)activation);
+        }
+
+        public void SetNeuronWeights(int layer, int neuron, double[] weights)
+        {
+            int status = NativeMethods.mlp_set_neuron_weights(_handle, layer, neuron, weights, weights.Length);
+            if (status != 0)
+                throw new MLPException(GetLastError());
+        }
+
         // Utility
 
         public static string[] AvailableBackends()

@@ -33,6 +33,8 @@ export get_layer_outputs
 export compute_loss, get_layer_errors, get_layer_size, get_layer_activation, get_layer_info
 export get_neuron_view, get_weight_m, get_weight_v, get_bias_m, get_bias_v
 export get_activation_histogram, get_gradient_histogram
+export set_weight_m!, set_weight_v!, set_bias_m!, set_bias_v!
+export set_timestep!, set_layer_activation!, set_neuron_weights!
 export export_onnx, import_onnx
 
 # Activation types
@@ -338,6 +340,43 @@ end
 
 function c_get_timestep(ptr::Ptr{Cvoid})
     Int(ccall((:mlp_get_timestep, LIBMLP[]), Int32, (Ptr{Cvoid},), ptr))
+end
+
+function c_set_weight_m(ptr::Ptr{Cvoid}, layer::Int, neuron::Int, weight_idx::Int, value::Float64)
+    ccall((:mlp_set_weight_m, LIBMLP[]), Cvoid,
+        (Ptr{Cvoid}, Int32, Int32, Int32, Float64),
+        ptr, Int32(layer), Int32(neuron), Int32(weight_idx), value)
+end
+
+function c_set_weight_v(ptr::Ptr{Cvoid}, layer::Int, neuron::Int, weight_idx::Int, value::Float64)
+    ccall((:mlp_set_weight_v, LIBMLP[]), Cvoid,
+        (Ptr{Cvoid}, Int32, Int32, Int32, Float64),
+        ptr, Int32(layer), Int32(neuron), Int32(weight_idx), value)
+end
+
+function c_set_bias_m(ptr::Ptr{Cvoid}, layer::Int, neuron::Int, value::Float64)
+    ccall((:mlp_set_bias_m, LIBMLP[]), Cvoid,
+        (Ptr{Cvoid}, Int32, Int32, Float64), ptr, Int32(layer), Int32(neuron), value)
+end
+
+function c_set_bias_v(ptr::Ptr{Cvoid}, layer::Int, neuron::Int, value::Float64)
+    ccall((:mlp_set_bias_v, LIBMLP[]), Cvoid,
+        (Ptr{Cvoid}, Int32, Int32, Float64), ptr, Int32(layer), Int32(neuron), value)
+end
+
+function c_set_timestep(ptr::Ptr{Cvoid}, value::Int)
+    ccall((:mlp_set_timestep, LIBMLP[]), Cvoid, (Ptr{Cvoid}, Int32), ptr, Int32(value))
+end
+
+function c_set_layer_activation(ptr::Ptr{Cvoid}, layer::Int, activation::Int)
+    ccall((:mlp_set_layer_activation, LIBMLP[]), Cvoid,
+        (Ptr{Cvoid}, Int32, Int32), ptr, Int32(layer), Int32(activation))
+end
+
+function c_set_neuron_weights(ptr::Ptr{Cvoid}, layer::Int, neuron::Int, weights::Vector{Float64})
+    ccall((:mlp_set_neuron_weights, LIBMLP[]), Int32,
+        (Ptr{Cvoid}, Int32, Int32, Ptr{Float64}, Int32),
+        ptr, Int32(layer), Int32(neuron), weights, Int32(length(weights)))
 end
 
 function c_export_onnx(ptr::Ptr{Cvoid}, filename::String)
@@ -846,6 +885,69 @@ Return a histogram of gradient values across all neurons in a layer.
 """
 function get_gradient_histogram(mlp::MLP, layer::Int, bins::Int)
     c_get_gradient_histogram(mlp.ptr, layer, bins)
+end
+
+"""
+    set_weight_m!(mlp, layer, neuron, weight_idx, value)
+
+Set the Adam first moment (M) for a specific weight.
+"""
+function set_weight_m!(mlp::MLP, layer::Int, neuron::Int, weight_idx::Int, value::Real)
+    c_set_weight_m(mlp.ptr, layer, neuron, weight_idx, Float64(value))
+end
+
+"""
+    set_weight_v!(mlp, layer, neuron, weight_idx, value)
+
+Set the Adam second moment (V) for a specific weight.
+"""
+function set_weight_v!(mlp::MLP, layer::Int, neuron::Int, weight_idx::Int, value::Real)
+    c_set_weight_v(mlp.ptr, layer, neuron, weight_idx, Float64(value))
+end
+
+"""
+    set_bias_m!(mlp, layer, neuron, value)
+
+Set the Adam first moment (M) for a specific bias.
+"""
+function set_bias_m!(mlp::MLP, layer::Int, neuron::Int, value::Real)
+    c_set_bias_m(mlp.ptr, layer, neuron, Float64(value))
+end
+
+"""
+    set_bias_v!(mlp, layer, neuron, value)
+
+Set the Adam second moment (V) for a specific bias.
+"""
+function set_bias_v!(mlp::MLP, layer::Int, neuron::Int, value::Real)
+    c_set_bias_v(mlp.ptr, layer, neuron, Float64(value))
+end
+
+"""
+    set_timestep!(mlp, value)
+
+Set the Adam optimizer timestep.
+"""
+function set_timestep!(mlp::MLP, value::Int)
+    c_set_timestep(mlp.ptr, value)
+end
+
+"""
+    set_layer_activation!(mlp, layer, activation)
+
+Set the activation function for a layer.
+"""
+function set_layer_activation!(mlp::MLP, layer::Int, activation::ActivationType)
+    c_set_layer_activation(mlp.ptr, layer, Int(activation))
+end
+
+"""
+    set_neuron_weights!(mlp, layer, neuron, weights)
+
+Set all weights for a neuron.
+"""
+function set_neuron_weights!(mlp::MLP, layer::Int, neuron::Int, weights::AbstractVector{<:Real})
+    c_set_neuron_weights(mlp.ptr, layer, neuron, Float64.(weights))
 end
 
 """

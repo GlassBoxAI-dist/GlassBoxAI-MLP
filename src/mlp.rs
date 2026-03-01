@@ -993,6 +993,75 @@ impl TMultiLayerPerceptronCUDA {
         0.0
     }
     
+    pub fn SetWeightM(&mut self, layer_idx: i32, neuron_idx: i32, weight_idx: i32, value: f64) {
+        if layer_idx > 0 && (layer_idx as usize) <= self.FHiddenLayers.len() {
+            let layer = &mut self.FHiddenLayers[layer_idx as usize - 1];
+            if neuron_idx >= 0 && (neuron_idx as usize) < layer.Neurons.len() {
+                let neuron = &mut layer.Neurons[neuron_idx as usize];
+                if weight_idx >= 0 && (weight_idx as usize) < neuron.M.len() {
+                    neuron.M[weight_idx as usize] = value;
+                }
+            }
+        }
+    }
+    
+    pub fn SetWeightV(&mut self, layer_idx: i32, neuron_idx: i32, weight_idx: i32, value: f64) {
+        if layer_idx > 0 && (layer_idx as usize) <= self.FHiddenLayers.len() {
+            let layer = &mut self.FHiddenLayers[layer_idx as usize - 1];
+            if neuron_idx >= 0 && (neuron_idx as usize) < layer.Neurons.len() {
+                let neuron = &mut layer.Neurons[neuron_idx as usize];
+                if weight_idx >= 0 && (weight_idx as usize) < neuron.V.len() {
+                    neuron.V[weight_idx as usize] = value;
+                }
+            }
+        }
+    }
+    
+    pub fn SetBiasM(&mut self, layer_idx: i32, neuron_idx: i32, value: f64) {
+        if layer_idx > 0 && (layer_idx as usize) <= self.FHiddenLayers.len() {
+            let layer = &mut self.FHiddenLayers[layer_idx as usize - 1];
+            if neuron_idx >= 0 && (neuron_idx as usize) < layer.Neurons.len() {
+                layer.Neurons[neuron_idx as usize].MBias = value;
+            }
+        }
+    }
+    
+    pub fn SetBiasV(&mut self, layer_idx: i32, neuron_idx: i32, value: f64) {
+        if layer_idx > 0 && (layer_idx as usize) <= self.FHiddenLayers.len() {
+            let layer = &mut self.FHiddenLayers[layer_idx as usize - 1];
+            if neuron_idx >= 0 && (neuron_idx as usize) < layer.Neurons.len() {
+                layer.Neurons[neuron_idx as usize].VBias = value;
+            }
+        }
+    }
+    
+    pub fn SetTimestep(&mut self, value: i32) {
+        self.Timestep = value;
+    }
+    
+    pub fn SetLayerActivation(&mut self, layer_idx: i32, activation: TActivationType) {
+        if layer_idx == 0 {
+            self.FInputLayer.ActivationType = activation;
+        } else if layer_idx > 0 && (layer_idx as usize) <= self.FHiddenLayers.len() {
+            self.FHiddenLayers[layer_idx as usize - 1].ActivationType = activation;
+            self.HiddenActivation = activation;
+        } else if layer_idx as usize == self.FHiddenLayers.len() + 1 {
+            self.FOutputLayer.ActivationType = activation;
+            self.OutputActivation = activation;
+        }
+    }
+    
+    pub fn SetNeuronWeights(&mut self, layer_idx: i32, neuron_idx: i32, weights: &[f64]) {
+        if layer_idx > 0 && (layer_idx as usize) <= self.FHiddenLayers.len() {
+            let layer = &mut self.FHiddenLayers[layer_idx as usize - 1];
+            if neuron_idx >= 0 && (neuron_idx as usize) < layer.Neurons.len() {
+                let neuron = &mut layer.Neurons[neuron_idx as usize];
+                let len = weights.len().min(neuron.Weights.len());
+                neuron.Weights[..len].copy_from_slice(&weights[..len]);
+            }
+        }
+    }
+    
     pub fn export_to_onnx(&self, _filename: &str) -> Result<(), String> {
         Err("ONNX export not yet implemented".to_string())
     }

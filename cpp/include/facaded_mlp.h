@@ -351,6 +351,51 @@ int32_t mlp_get_gradient_histogram(
 int32_t mlp_get_timestep(mlp_handle_t mlp);
 
 /*
+ * Set Adam optimizer's first moment (M) for a weight.
+ */
+void mlp_set_weight_m(mlp_handle_t mlp, int32_t layer, int32_t neuron, int32_t weight_idx, double value);
+
+/*
+ * Set Adam optimizer's second moment (V) for a weight.
+ */
+void mlp_set_weight_v(mlp_handle_t mlp, int32_t layer, int32_t neuron, int32_t weight_idx, double value);
+
+/*
+ * Set Adam optimizer's first moment (M) for a bias.
+ */
+void mlp_set_bias_m(mlp_handle_t mlp, int32_t layer, int32_t neuron, double value);
+
+/*
+ * Set Adam optimizer's second moment (V) for a bias.
+ */
+void mlp_set_bias_v(mlp_handle_t mlp, int32_t layer, int32_t neuron, double value);
+
+/*
+ * Set Adam optimizer timestep.
+ */
+void mlp_set_timestep(mlp_handle_t mlp, int32_t value);
+
+/*
+ * Set the activation type of a layer.
+ *
+ * @param layer Layer index
+ * @param activation Activation type (0=Sigmoid, 1=Tanh, 2=ReLU, 3=Softmax)
+ */
+void mlp_set_layer_activation(mlp_handle_t mlp, int32_t layer, int32_t activation);
+
+/*
+ * Set all weights for a neuron.
+ *
+ * @param layer Layer index
+ * @param neuron Neuron index
+ * @param weights Array of weight values
+ * @param weights_len Number of weights
+ * @return 0 on success, negative on error
+ */
+int32_t mlp_set_neuron_weights(mlp_handle_t mlp, int32_t layer, int32_t neuron,
+    const double* weights, int32_t weights_len);
+
+/*
  * Export model to an ONNX file.
  *
  * @param mlp      Model handle

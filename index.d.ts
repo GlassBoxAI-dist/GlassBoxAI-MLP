@@ -223,6 +223,106 @@ export class MLP {
   getLayerOutputs(layer: number): number[];
 
   /**
+   * Get layer errors/gradients
+   * @param layer - Layer index
+   * @returns Error values for all neurons in the layer
+   */
+  getLayerErrors(layer: number): number[];
+
+  /**
+   * Get the size of a layer
+   * @param layer - Layer index
+   * @returns Number of neurons in the layer
+   */
+  getLayerSize(layer: number): number;
+
+  /**
+   * Get the activation type of a layer
+   * @param layer - Layer index
+   * @returns Activation type (0=Sigmoid, 1=Tanh, 2=ReLU, 3=Softmax)
+   */
+  getLayerActivation(layer: number): number;
+
+  /**
+   * Set the activation type of a layer
+   * @param layer - Layer index
+   * @param activation - Activation type (0=Sigmoid, 1=Tanh, 2=ReLU, 3=Softmax)
+   */
+  setLayerActivation(layer: number, activation: number): void;
+
+  /**
+   * Get Adam optimizer's first moment (M) for a weight
+   */
+  getWeightM(layer: number, neuron: number, weightIdx: number): number;
+
+  /**
+   * Set Adam optimizer's first moment (M) for a weight
+   */
+  setWeightM(layer: number, neuron: number, weightIdx: number, value: number): void;
+
+  /**
+   * Get Adam optimizer's second moment (V) for a weight
+   */
+  getWeightV(layer: number, neuron: number, weightIdx: number): number;
+
+  /**
+   * Set Adam optimizer's second moment (V) for a weight
+   */
+  setWeightV(layer: number, neuron: number, weightIdx: number, value: number): void;
+
+  /**
+   * Get Adam optimizer's first moment (M) for a bias
+   */
+  getBiasM(layer: number, neuron: number): number;
+
+  /**
+   * Set Adam optimizer's first moment (M) for a bias
+   */
+  setBiasM(layer: number, neuron: number, value: number): void;
+
+  /**
+   * Get Adam optimizer's second moment (V) for a bias
+   */
+  getBiasV(layer: number, neuron: number): number;
+
+  /**
+   * Set Adam optimizer's second moment (V) for a bias
+   */
+  setBiasV(layer: number, neuron: number, value: number): void;
+
+  /**
+   * Get Adam optimizer timestep
+   */
+  getTimestep(): number;
+
+  /**
+   * Set Adam optimizer timestep
+   */
+  setTimestep(value: number): void;
+
+  /**
+   * Get activation histogram for a layer
+   * @param layer - Layer index
+   * @param bins - Number of histogram bins
+   */
+  getActivationHistogram(layer: number, bins: number): number[];
+
+  /**
+   * Get gradient histogram for a layer
+   * @param layer - Layer index
+   * @param bins - Number of histogram bins
+   */
+  getGradientHistogram(layer: number, bins: number): number[];
+
+  /**
+   * Set all weights for a neuron
+   * @param layer - Layer index
+   * @param neuron - Neuron index
+   * @param weights - New weight values
+   */
+  setNeuronWeights(layer: number, neuron: number, weights: number[]): void;
+
+  /**
    * Get model info
    * @returns Model information object
    */

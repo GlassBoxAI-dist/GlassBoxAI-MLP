@@ -729,6 +729,87 @@ pub extern "C" fn mlp_import_onnx(filename: *const c_char, backend: *const c_cha
     }
 }
 
+/// Set Adam optimizer's first moment (M) for a weight
+#[no_mangle]
+pub extern "C" fn mlp_set_weight_m(
+    mlp: *mut JuliaMLP,
+    layer: i32,
+    neuron: i32,
+    weight_idx: i32,
+    value: f64,
+) {
+    if !mlp.is_null() && layer >= 0 && neuron >= 0 && weight_idx >= 0 && !value.is_nan() && !value.is_infinite() {
+        unsafe { (*mlp).inner.SetWeightM(layer, neuron, weight_idx, value); }
+    }
+}
+
+/// Set Adam optimizer's second moment (V) for a weight
+#[no_mangle]
+pub extern "C" fn mlp_set_weight_v(
+    mlp: *mut JuliaMLP,
+    layer: i32,
+    neuron: i32,
+    weight_idx: i32,
+    value: f64,
+) {
+    if !mlp.is_null() && layer >= 0 && neuron >= 0 && weight_idx >= 0 && !value.is_nan() && !value.is_infinite() {
+        unsafe { (*mlp).inner.SetWeightV(layer, neuron, weight_idx, value); }
+    }
+}
+
+/// Set Adam optimizer's first moment (M) for a bias
+#[no_mangle]
+pub extern "C" fn mlp_set_bias_m(mlp: *mut JuliaMLP, layer: i32, neuron: i32, value: f64) {
+    if !mlp.is_null() && layer >= 0 && neuron >= 0 && !value.is_nan() && !value.is_infinite() {
+        unsafe { (*mlp).inner.SetBiasM(layer, neuron, value); }
+    }
+}
+
+/// Set Adam optimizer's second moment (V) for a bias
+#[no_mangle]
+pub extern "C" fn mlp_set_bias_v(mlp: *mut JuliaMLP, layer: i32, neuron: i32, value: f64) {
+    if !mlp.is_null() && layer >= 0 && neuron >= 0 && !value.is_nan() && !value.is_infinite() {
+        unsafe { (*mlp).inner.SetBiasV(layer, neuron, value); }
+    }
+}
+
+/// Set Adam optimizer timestep
+#[no_mangle]
+pub extern "C" fn mlp_set_timestep(mlp: *mut JuliaMLP, value: i32) {
+    if !mlp.is_null() && value >= 0 {
+        unsafe { (*mlp).inner.SetTimestep(value); }
+    }
+}
+
+/// Set the activation type of a layer (0=Sigmoid, 1=Tanh, 2=ReLU, 3=Softmax)
+#[no_mangle]
+pub extern "C" fn mlp_set_layer_activation(mlp: *mut JuliaMLP, layer: i32, activation: i32) {
+    if !mlp.is_null() && layer >= 0 {
+        unsafe { (*mlp).inner.SetLayerActivation(layer, int_to_activation(activation)); }
+    }
+}
+
+/// Set all weights for a neuron
+#[no_mangle]
+pub extern "C" fn mlp_set_neuron_weights(
+    mlp: *mut JuliaMLP,
+    layer: i32,
+    neuron: i32,
+    weights: *const f64,
+    weights_len: i32,
+) -> i32 {
+    if mlp.is_null() || weights.is_null() || layer < 0 || neuron < 0 || weights_len <= 0 {
+        return JuliaStatus::InvalidArg as i32;
+    }
+
+    let weights_vec: Vec<f64> = unsafe {
+        std::slice::from_raw_parts(weights, weights_len as usize).to_vec()
+    };
+
+    unsafe { (*mlp).inner.SetNeuronWeights(layer, neuron, &weights_vec); }
+    JuliaStatus::Ok as i32
+}
+
 // Helper functions
 
 fn int_to_activation(val: i32) -> TActivationType {

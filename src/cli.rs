@@ -14,6 +14,9 @@ pub enum TCommand {
     CmdGetOutput, CmdGetError, CmdLayerInfo, CmdHistogram,
     CmdGetOptimizer, CmdGetWeights, CmdGetAllOutputs, CmdBatchPredict,
     CmdExportONNX, CmdImportONNX, CmdFeatureImportance,
+    CmdSetWeights, CmdSetWeightM, CmdSetWeightV, CmdSetBiasM, CmdSetBiasV,
+    CmdSetTimestep, CmdSetActivation,
+    CmdSetLearningRate, CmdSetOptimizerType, CmdSetDropout, CmdSetL2, CmdSetBatchNorm,
 }
 
 fn PrintUsage() {
@@ -40,6 +43,18 @@ fn PrintUsage() {
     println!("  layer-info        Display layer information (FACADE)");
     println!("  histogram         Display activation or error histogram (FACADE)");
     println!("  get-optimizer     Get optimizer state values M, V (FACADE)");
+    println!("  set-weights       Set all weights for a neuron (FACADE)");
+    println!("  set-weight-m      Set Adam weight M value (FACADE)");
+    println!("  set-weight-v      Set Adam weight V value (FACADE)");
+    println!("  set-bias-m        Set Adam bias M value (FACADE)");
+    println!("  set-bias-v        Set Adam bias V value (FACADE)");
+    println!("  set-timestep      Set optimizer timestep (FACADE)");
+    println!("  set-activation    Set layer activation function (FACADE)");
+    println!("  set-learning-rate Set model learning rate (FACADE)");
+    println!("  set-optimizer-type Set optimizer type sgd|adam|rmsprop (FACADE)");
+    println!("  set-dropout       Set dropout rate (FACADE)");
+    println!("  set-l2            Set L2 regularization lambda (FACADE)");
+    println!("  set-batch-norm    Set batch normalization on|off (FACADE)");
     println!("  help              Show this help message");
     println!();
     println!("Create Options:");
@@ -89,6 +104,10 @@ fn PrintUsage() {
     println!("  --bins=N                   Number of histogram bins (default: 20)");
     println!("  --type=TYPE                Histogram type: activation|error (default: activation)");
     println!("  -i, --input=v1,v2,...      Input values for get-output command");
+    println!("  --values=v1,v2,...         Comma-separated values (for set-weights)");
+    println!("  --activation=TYPE          Activation type: sigmoid|tanh|relu|softmax (for set-activation)");
+    println!("  --timestep=N               Timestep value (for set-timestep)");
+    println!("  --on / --off               Toggle for set-batch-norm");
     println!();
     println!("ONNX Options:");
     println!("  -m, --model=FILE           Model file (required for export)");
@@ -114,6 +133,15 @@ fn PrintUsage() {
     println!("  facaded_mlp import-onnx --onnx=xor.onnx -s xor_imported.json");
     println!("  facaded_mlp feature-importance -m xor.json");
     println!("  facaded_mlp create -i 2 -H 8 -o 1 -s xor.json --batch-norm");
+    println!("  facaded_mlp set-weights -m xor.json --layer=1 --neuron=0 --values=0.1,0.2 -s xor_mod.json");
+    println!("  facaded_mlp set-weight-m -m xor.json --layer=1 --neuron=0 --weight=0 --value=0.01 -s xor_mod.json");
+    println!("  facaded_mlp set-activation -m xor.json --layer=1 --activation=relu -s xor_mod.json");
+    println!("  facaded_mlp set-timestep -m xor.json --timestep=100 -s xor_mod.json");
+    println!("  facaded_mlp set-learning-rate -m xor.json --value=0.001 -s xor_mod.json");
+    println!("  facaded_mlp set-optimizer-type -m xor.json --optimizer=adam -s xor_mod.json");
+    println!("  facaded_mlp set-dropout -m xor.json --value=0.2 -s xor_mod.json");
+    println!("  facaded_mlp set-l2 -m xor.json --value=0.0001 -s xor_mod.json");
+    println!("  facaded_mlp set-batch-norm -m xor.json --on -s xor_mod.json");
     println!("  --gpu=TYPE                 GPU backend: auto|cpu|cuda|opencl (default: auto)");
 }
 
@@ -149,6 +177,18 @@ pub fn run() {
         "export-onnx" => TCommand::CmdExportONNX,
         "import-onnx" => TCommand::CmdImportONNX,
         "feature-importance" => TCommand::CmdFeatureImportance,
+        "set-weights" => TCommand::CmdSetWeights,
+        "set-weight-m" => TCommand::CmdSetWeightM,
+        "set-weight-v" => TCommand::CmdSetWeightV,
+        "set-bias-m" => TCommand::CmdSetBiasM,
+        "set-bias-v" => TCommand::CmdSetBiasV,
+        "set-timestep" => TCommand::CmdSetTimestep,
+        "set-activation" => TCommand::CmdSetActivation,
+        "set-learning-rate" => TCommand::CmdSetLearningRate,
+        "set-optimizer-type" => TCommand::CmdSetOptimizerType,
+        "set-dropout" => TCommand::CmdSetDropout,
+        "set-l2" => TCommand::CmdSetL2,
+        "set-batch-norm" => TCommand::CmdSetBatchNorm,
         _ => {
             eprintln!("Unknown command: {}", cmd_str);
             PrintUsage();
@@ -196,6 +236,11 @@ pub fn run() {
     let mut run_input: Darray = Vec::new();
     let mut batch_norm = false;
     let mut onnx_file = String::new();
+    let mut set_values: Darray = Vec::new();
+    let mut set_activation = String::new();
+    let mut set_timestep_val: i32 = -1;
+    let mut toggle_on = false;
+    let mut toggle_off = false;
 
     for i in 2..args.len() {
         let arg = &args[i];
@@ -204,6 +249,8 @@ pub fn run() {
         if arg == "--normalize" { normalize = true; continue; }
         if arg == "--verbose" { verbose = true; continue; }
         if arg == "--batch-norm" { batch_norm = true; continue; }
+        if arg == "--on" { toggle_on = true; continue; }
+        if arg == "--off" { toggle_off = true; continue; }
 
         if let Some(eq) = arg.find('=') {
             let key = &arg[..eq];
@@ -240,6 +287,9 @@ pub fn run() {
                 "--run-input" => run_input = ParseDoubleArray(value),
                 "--onnx" => onnx_file = value.to_string(),
                 "--gpu" | "--backend" => gpu_backend = value.to_string(),
+                "--values" => set_values = ParseDoubleArray(value),
+                "--activation" => set_activation = value.to_string(),
+                "--timestep" => set_timestep_val = value.parse().unwrap_or(-1),
                 _ => eprintln!("Unknown option: {}", key),
             }
         }
@@ -592,6 +642,151 @@ pub fn run() {
             for (rank, (feature_idx, score)) in importance.iter().enumerate() {
                 println!("  Rank {:2}: Feature {:3} -> Score: {:.6}", rank + 1, feature_idx, score);
             }
+        }
+        TCommand::CmdSetWeights => {
+            if model_file.is_empty() { eprintln!("Error: --model is required"); process::exit(1); }
+            if layer_idx < 0 { eprintln!("Error: --layer is required"); process::exit(1); }
+            if neuron_idx < 0 { eprintln!("Error: --neuron is required"); process::exit(1); }
+            if set_values.is_empty() { eprintln!("Error: --values is required"); process::exit(1); }
+            if save_file.is_empty() { eprintln!("Error: --save is required"); process::exit(1); }
+            let mut mlp = match TMultiLayerPerceptronCUDA::Load(&model_file) { Ok(m) => m, Err(e) => { eprintln!("Error: {}", e); process::exit(1); } };
+            let old_weights = mlp.GetNeuronWeights(layer_idx, neuron_idx);
+            mlp.SetNeuronWeights(layer_idx, neuron_idx, &set_values);
+            mlp.Save(&save_file).unwrap();
+            println!("Weights[layer={}, neuron={}]: {:?} -> {:?}", layer_idx, neuron_idx, old_weights, set_values);
+            println!("Saved to: {}", save_file);
+        }
+        TCommand::CmdSetWeightM => {
+            if model_file.is_empty() { eprintln!("Error: --model is required"); process::exit(1); }
+            if layer_idx < 0 { eprintln!("Error: --layer is required"); process::exit(1); }
+            if neuron_idx < 0 { eprintln!("Error: --neuron is required"); process::exit(1); }
+            if weight_idx < 0 { eprintln!("Error: --weight is required"); process::exit(1); }
+            if !has_set_value { eprintln!("Error: --value is required"); process::exit(1); }
+            if save_file.is_empty() { eprintln!("Error: --save is required"); process::exit(1); }
+            let mut mlp = match TMultiLayerPerceptronCUDA::Load(&model_file) { Ok(m) => m, Err(e) => { eprintln!("Error: {}", e); process::exit(1); } };
+            let old_val = mlp.GetWeightM(layer_idx, neuron_idx, weight_idx);
+            mlp.SetWeightM(layer_idx, neuron_idx, weight_idx, set_value);
+            mlp.Save(&save_file).unwrap();
+            println!("WeightM[layer={}, neuron={}, weight={}]: {:.10} -> {:.10}", layer_idx, neuron_idx, weight_idx, old_val, set_value);
+            println!("Saved to: {}", save_file);
+        }
+        TCommand::CmdSetWeightV => {
+            if model_file.is_empty() { eprintln!("Error: --model is required"); process::exit(1); }
+            if layer_idx < 0 { eprintln!("Error: --layer is required"); process::exit(1); }
+            if neuron_idx < 0 { eprintln!("Error: --neuron is required"); process::exit(1); }
+            if weight_idx < 0 { eprintln!("Error: --weight is required"); process::exit(1); }
+            if !has_set_value { eprintln!("Error: --value is required"); process::exit(1); }
+            if save_file.is_empty() { eprintln!("Error: --save is required"); process::exit(1); }
+            let mut mlp = match TMultiLayerPerceptronCUDA::Load(&model_file) { Ok(m) => m, Err(e) => { eprintln!("Error: {}", e); process::exit(1); } };
+            let old_val = mlp.GetWeightV(layer_idx, neuron_idx, weight_idx);
+            mlp.SetWeightV(layer_idx, neuron_idx, weight_idx, set_value);
+            mlp.Save(&save_file).unwrap();
+            println!("WeightV[layer={}, neuron={}, weight={}]: {:.10} -> {:.10}", layer_idx, neuron_idx, weight_idx, old_val, set_value);
+            println!("Saved to: {}", save_file);
+        }
+        TCommand::CmdSetBiasM => {
+            if model_file.is_empty() { eprintln!("Error: --model is required"); process::exit(1); }
+            if layer_idx < 0 { eprintln!("Error: --layer is required"); process::exit(1); }
+            if neuron_idx < 0 { eprintln!("Error: --neuron is required"); process::exit(1); }
+            if !has_set_value { eprintln!("Error: --value is required"); process::exit(1); }
+            if save_file.is_empty() { eprintln!("Error: --save is required"); process::exit(1); }
+            let mut mlp = match TMultiLayerPerceptronCUDA::Load(&model_file) { Ok(m) => m, Err(e) => { eprintln!("Error: {}", e); process::exit(1); } };
+            let old_val = mlp.GetBiasM(layer_idx, neuron_idx);
+            mlp.SetBiasM(layer_idx, neuron_idx, set_value);
+            mlp.Save(&save_file).unwrap();
+            println!("BiasM[layer={}, neuron={}]: {:.10} -> {:.10}", layer_idx, neuron_idx, old_val, set_value);
+            println!("Saved to: {}", save_file);
+        }
+        TCommand::CmdSetBiasV => {
+            if model_file.is_empty() { eprintln!("Error: --model is required"); process::exit(1); }
+            if layer_idx < 0 { eprintln!("Error: --layer is required"); process::exit(1); }
+            if neuron_idx < 0 { eprintln!("Error: --neuron is required"); process::exit(1); }
+            if !has_set_value { eprintln!("Error: --value is required"); process::exit(1); }
+            if save_file.is_empty() { eprintln!("Error: --save is required"); process::exit(1); }
+            let mut mlp = match TMultiLayerPerceptronCUDA::Load(&model_file) { Ok(m) => m, Err(e) => { eprintln!("Error: {}", e); process::exit(1); } };
+            let old_val = mlp.GetBiasV(layer_idx, neuron_idx);
+            mlp.SetBiasV(layer_idx, neuron_idx, set_value);
+            mlp.Save(&save_file).unwrap();
+            println!("BiasV[layer={}, neuron={}]: {:.10} -> {:.10}", layer_idx, neuron_idx, old_val, set_value);
+            println!("Saved to: {}", save_file);
+        }
+        TCommand::CmdSetTimestep => {
+            if model_file.is_empty() { eprintln!("Error: --model is required"); process::exit(1); }
+            if set_timestep_val < 0 { eprintln!("Error: --timestep is required"); process::exit(1); }
+            if save_file.is_empty() { eprintln!("Error: --save is required"); process::exit(1); }
+            let mut mlp = match TMultiLayerPerceptronCUDA::Load(&model_file) { Ok(m) => m, Err(e) => { eprintln!("Error: {}", e); process::exit(1); } };
+            let old_val = mlp.Timestep;
+            mlp.SetTimestep(set_timestep_val);
+            mlp.Save(&save_file).unwrap();
+            println!("Timestep: {} -> {}", old_val, set_timestep_val);
+            println!("Saved to: {}", save_file);
+        }
+        TCommand::CmdSetActivation => {
+            if model_file.is_empty() { eprintln!("Error: --model is required"); process::exit(1); }
+            if layer_idx < 0 { eprintln!("Error: --layer is required"); process::exit(1); }
+            if set_activation.is_empty() { eprintln!("Error: --activation is required"); process::exit(1); }
+            if save_file.is_empty() { eprintln!("Error: --save is required"); process::exit(1); }
+            let mut mlp = match TMultiLayerPerceptronCUDA::Load(&model_file) { Ok(m) => m, Err(e) => { eprintln!("Error: {}", e); process::exit(1); } };
+            let old_act = ActivationToStr(mlp.GetLayerActivation(layer_idx));
+            let new_act = ParseActivation(&set_activation);
+            mlp.SetLayerActivation(layer_idx, new_act);
+            mlp.Save(&save_file).unwrap();
+            println!("Activation[layer={}]: {} -> {}", layer_idx, old_act, ActivationToStr(new_act));
+            println!("Saved to: {}", save_file);
+        }
+        TCommand::CmdSetLearningRate => {
+            if model_file.is_empty() { eprintln!("Error: --model is required"); process::exit(1); }
+            if !has_set_value { eprintln!("Error: --value is required"); process::exit(1); }
+            if save_file.is_empty() { eprintln!("Error: --save is required"); process::exit(1); }
+            let mut mlp = match TMultiLayerPerceptronCUDA::Load(&model_file) { Ok(m) => m, Err(e) => { eprintln!("Error: {}", e); process::exit(1); } };
+            let old_val = mlp.LearningRate;
+            mlp.LearningRate = set_value;
+            mlp.Save(&save_file).unwrap();
+            println!("LearningRate: {:.10} -> {:.10}", old_val, set_value);
+            println!("Saved to: {}", save_file);
+        }
+        TCommand::CmdSetOptimizerType => {
+            if model_file.is_empty() { eprintln!("Error: --model is required"); process::exit(1); }
+            if save_file.is_empty() { eprintln!("Error: --save is required"); process::exit(1); }
+            let mut mlp = match TMultiLayerPerceptronCUDA::Load(&model_file) { Ok(m) => m, Err(e) => { eprintln!("Error: {}", e); process::exit(1); } };
+            let old_opt = OptimizerToStr(mlp.Optimizer);
+            mlp.Optimizer = optimizer;
+            mlp.Save(&save_file).unwrap();
+            println!("Optimizer: {} -> {}", old_opt, OptimizerToStr(mlp.Optimizer));
+            println!("Saved to: {}", save_file);
+        }
+        TCommand::CmdSetDropout => {
+            if model_file.is_empty() { eprintln!("Error: --model is required"); process::exit(1); }
+            if !has_set_value { eprintln!("Error: --value is required"); process::exit(1); }
+            if save_file.is_empty() { eprintln!("Error: --save is required"); process::exit(1); }
+            let mut mlp = match TMultiLayerPerceptronCUDA::Load(&model_file) { Ok(m) => m, Err(e) => { eprintln!("Error: {}", e); process::exit(1); } };
+            let old_val = mlp.DropoutRate;
+            mlp.DropoutRate = set_value;
+            mlp.Save(&save_file).unwrap();
+            println!("DropoutRate: {:.6} -> {:.6}", old_val, set_value);
+            println!("Saved to: {}", save_file);
+        }
+        TCommand::CmdSetL2 => {
+            if model_file.is_empty() { eprintln!("Error: --model is required"); process::exit(1); }
+            if !has_set_value { eprintln!("Error: --value is required"); process::exit(1); }
+            if save_file.is_empty() { eprintln!("Error: --save is required"); process::exit(1); }
+            let mut mlp = match TMultiLayerPerceptronCUDA::Load(&model_file) { Ok(m) => m, Err(e) => { eprintln!("Error: {}", e); process::exit(1); } };
+            let old_val = mlp.L2Lambda;
+            mlp.L2Lambda = set_value;
+            mlp.Save(&save_file).unwrap();
+            println!("L2Lambda: {:.10} -> {:.10}", old_val, set_value);
+            println!("Saved to: {}", save_file);
+        }
+        TCommand::CmdSetBatchNorm => {
+            if model_file.is_empty() { eprintln!("Error: --model is required"); process::exit(1); }
+            if !toggle_on && !toggle_off { eprintln!("Error: --on or --off is required"); process::exit(1); }
+            if save_file.is_empty() { eprintln!("Error: --save is required"); process::exit(1); }
+            let mut mlp = match TMultiLayerPerceptronCUDA::Load(&model_file) { Ok(m) => m, Err(e) => { eprintln!("Error: {}", e); process::exit(1); } };
+            let old_val = mlp.UseBatchNorm;
+            mlp.UseBatchNorm = toggle_on;
+            mlp.Save(&save_file).unwrap();
+            println!("BatchNorm: {} -> {}", old_val, toggle_on);
+            println!("Saved to: {}", save_file);
         }
         _ => {}
     }

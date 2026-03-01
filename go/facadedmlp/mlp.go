@@ -107,6 +107,16 @@ extern int32_t mlp_get_activation_histogram(mlp_handle_t mlp, int32_t layer, int
 extern int32_t mlp_get_gradient_histogram(mlp_handle_t mlp, int32_t layer, int32_t bins,
     int32_t* output, int32_t capacity);
 extern int32_t mlp_get_timestep(mlp_handle_t mlp);
+extern void mlp_set_weight_m(mlp_handle_t mlp, int32_t layer, int32_t neuron,
+    int32_t weight_idx, double value);
+extern void mlp_set_weight_v(mlp_handle_t mlp, int32_t layer, int32_t neuron,
+    int32_t weight_idx, double value);
+extern void mlp_set_bias_m(mlp_handle_t mlp, int32_t layer, int32_t neuron, double value);
+extern void mlp_set_bias_v(mlp_handle_t mlp, int32_t layer, int32_t neuron, double value);
+extern void mlp_set_timestep(mlp_handle_t mlp, int32_t value);
+extern void mlp_set_layer_activation(mlp_handle_t mlp, int32_t layer, int32_t activation);
+extern int32_t mlp_set_neuron_weights(mlp_handle_t mlp, int32_t layer, int32_t neuron,
+    const double* weights, int32_t weights_len);
 extern int32_t mlp_export_onnx(mlp_handle_t mlp, const char* filename);
 extern mlp_handle_t mlp_import_onnx(const char* filename, const char* backend);
 */
@@ -775,6 +785,48 @@ func (m *MLP) GetGradientHistogram(layer, bins int) []int {
 		result[i] = int(hist[i])
 	}
 	return result
+}
+
+// SetWeightM sets the Adam first moment (M) for a specific weight.
+func (m *MLP) SetWeightM(layer, neuron, weightIdx int, value float64) {
+	C.mlp_set_weight_m(m.handle, C.int32_t(layer), C.int32_t(neuron),
+		C.int32_t(weightIdx), C.double(value))
+}
+
+// SetWeightV sets the Adam second moment (V) for a specific weight.
+func (m *MLP) SetWeightV(layer, neuron, weightIdx int, value float64) {
+	C.mlp_set_weight_v(m.handle, C.int32_t(layer), C.int32_t(neuron),
+		C.int32_t(weightIdx), C.double(value))
+}
+
+// SetBiasM sets the Adam first moment (M) for a specific bias.
+func (m *MLP) SetBiasM(layer, neuron int, value float64) {
+	C.mlp_set_bias_m(m.handle, C.int32_t(layer), C.int32_t(neuron), C.double(value))
+}
+
+// SetBiasV sets the Adam second moment (V) for a specific bias.
+func (m *MLP) SetBiasV(layer, neuron int, value float64) {
+	C.mlp_set_bias_v(m.handle, C.int32_t(layer), C.int32_t(neuron), C.double(value))
+}
+
+// SetTimestep sets the Adam optimizer timestep.
+func (m *MLP) SetTimestep(value int) {
+	C.mlp_set_timestep(m.handle, C.int32_t(value))
+}
+
+// SetLayerActivation sets the activation function for a layer.
+func (m *MLP) SetLayerActivation(layer int, activation ActivationType) {
+	C.mlp_set_layer_activation(m.handle, C.int32_t(layer), C.int32_t(activation))
+}
+
+// SetNeuronWeights sets all weights for a neuron.
+func (m *MLP) SetNeuronWeights(layer, neuron int, weights []float64) error {
+	result := C.mlp_set_neuron_weights(m.handle, C.int32_t(layer), C.int32_t(neuron),
+		(*C.double)(unsafe.Pointer(&weights[0])), C.int32_t(len(weights)))
+	if result != 0 {
+		return getLastError()
+	}
+	return nil
 }
 
 // ExportONNX exports the model to an ONNX file.

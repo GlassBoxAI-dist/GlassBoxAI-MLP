@@ -431,6 +431,35 @@ pub const MLP = struct {
         return c.mlp_get_bias_v(self.handle, @intCast(layer), @intCast(neuron));
     }
 
+    pub fn setWeightM(self: *MLP, layer: usize, neuron: usize, weight_idx: usize, value: f64) void {
+        c.mlp_set_weight_m(self.handle, @intCast(layer), @intCast(neuron), @intCast(weight_idx), value);
+    }
+
+    pub fn setWeightV(self: *MLP, layer: usize, neuron: usize, weight_idx: usize, value: f64) void {
+        c.mlp_set_weight_v(self.handle, @intCast(layer), @intCast(neuron), @intCast(weight_idx), value);
+    }
+
+    pub fn setBiasM(self: *MLP, layer: usize, neuron: usize, value: f64) void {
+        c.mlp_set_bias_m(self.handle, @intCast(layer), @intCast(neuron), value);
+    }
+
+    pub fn setBiasV(self: *MLP, layer: usize, neuron: usize, value: f64) void {
+        c.mlp_set_bias_v(self.handle, @intCast(layer), @intCast(neuron), value);
+    }
+
+    pub fn setTimestep(self: *MLP, value: i32) void {
+        c.mlp_set_timestep(self.handle, value);
+    }
+
+    pub fn setLayerActivation(self: *MLP, layer: usize, activation: Activation) void {
+        c.mlp_set_layer_activation(self.handle, @intCast(layer), @intFromEnum(activation));
+    }
+
+    pub fn setNeuronWeights(self: *MLP, layer: usize, neuron: usize, weights: []const f64) MlpError!void {
+        const status = c.mlp_set_neuron_weights(self.handle, @intCast(layer), @intCast(neuron), weights.ptr, @intCast(weights.len));
+        if (status != 0) return MlpError.TrainFailed;
+    }
+
     pub fn getActivationHistogram(self: *const MLP, allocator: std.mem.Allocator, layer: usize, bins: usize) MlpError![]i32 {
         const buf = allocator.alloc(i32, bins) catch return MlpError.OutOfMemory;
         const len: usize = @intCast(c.mlp_get_activation_histogram(

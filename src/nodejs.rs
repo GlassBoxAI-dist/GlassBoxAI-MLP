@@ -436,6 +436,115 @@ impl MLP {
         self.inner.GetLayerOutputs(layer)
     }
 
+    /// Get layer errors/gradients
+    #[napi]
+    pub fn get_layer_errors(&mut self, layer: i32) -> Vec<f64> {
+        self.inner.GetLayerErrors(layer)
+    }
+
+    /// Get the size of a layer
+    #[napi]
+    pub fn get_layer_size(&self, layer: i32) -> i32 {
+        self.inner.GetLayerSize(layer as usize) as i32
+    }
+
+    /// Get the activation type of a layer
+    #[napi]
+    pub fn get_layer_activation(&self, layer: i32) -> i32 {
+        self.inner.GetLayerActivation(layer) as i32
+    }
+
+    /// Set the activation type of a layer (0=Sigmoid, 1=Tanh, 2=ReLU, 3=Softmax)
+    #[napi]
+    pub fn set_layer_activation(&mut self, layer: i32, activation: i32) {
+        let act = match activation {
+            0 => TActivationType::atSigmoid,
+            1 => TActivationType::atTanh,
+            2 => TActivationType::atReLU,
+            3 => TActivationType::atSoftmax,
+            _ => TActivationType::atSigmoid,
+        };
+        self.inner.SetLayerActivation(layer, act);
+    }
+
+    /// Get Adam optimizer's first moment (M) for a weight
+    #[napi]
+    pub fn get_weight_m(&self, layer: i32, neuron: i32, weight_idx: i32) -> f64 {
+        self.inner.GetWeightM(layer, neuron, weight_idx)
+    }
+
+    /// Set Adam optimizer's first moment (M) for a weight
+    #[napi]
+    pub fn set_weight_m(&mut self, layer: i32, neuron: i32, weight_idx: i32, value: f64) {
+        self.inner.SetWeightM(layer, neuron, weight_idx, value);
+    }
+
+    /// Get Adam optimizer's second moment (V) for a weight
+    #[napi]
+    pub fn get_weight_v(&self, layer: i32, neuron: i32, weight_idx: i32) -> f64 {
+        self.inner.GetWeightV(layer, neuron, weight_idx)
+    }
+
+    /// Set Adam optimizer's second moment (V) for a weight
+    #[napi]
+    pub fn set_weight_v(&mut self, layer: i32, neuron: i32, weight_idx: i32, value: f64) {
+        self.inner.SetWeightV(layer, neuron, weight_idx, value);
+    }
+
+    /// Get Adam optimizer's first moment (M) for a bias
+    #[napi]
+    pub fn get_bias_m(&self, layer: i32, neuron: i32) -> f64 {
+        self.inner.GetBiasM(layer, neuron)
+    }
+
+    /// Set Adam optimizer's first moment (M) for a bias
+    #[napi]
+    pub fn set_bias_m(&mut self, layer: i32, neuron: i32, value: f64) {
+        self.inner.SetBiasM(layer, neuron, value);
+    }
+
+    /// Get Adam optimizer's second moment (V) for a bias
+    #[napi]
+    pub fn get_bias_v(&self, layer: i32, neuron: i32) -> f64 {
+        self.inner.GetBiasV(layer, neuron)
+    }
+
+    /// Set Adam optimizer's second moment (V) for a bias
+    #[napi]
+    pub fn set_bias_v(&mut self, layer: i32, neuron: i32, value: f64) {
+        self.inner.SetBiasV(layer, neuron, value);
+    }
+
+    /// Get Adam optimizer timestep
+    #[napi]
+    pub fn get_timestep(&self) -> i32 {
+        self.inner.Timestep
+    }
+
+    /// Set Adam optimizer timestep
+    #[napi]
+    pub fn set_timestep(&mut self, value: i32) {
+        self.inner.SetTimestep(value);
+    }
+
+    /// Get activation histogram for a layer
+    #[napi]
+    pub fn get_activation_histogram(&self, layer: i32, bins: i32) -> Vec<i32> {
+        self.inner.GetActivationHistogram(layer, bins as usize)
+    }
+
+    /// Get gradient histogram for a layer
+    #[napi]
+    pub fn get_gradient_histogram(&self, layer: i32, bins: i32) -> Vec<i32> {
+        self.inner.GetGradientHistogram(layer, bins as usize)
+    }
+
+    /// Set all weights for a neuron
+    #[napi]
+    pub fn set_neuron_weights(&mut self, layer: i32, neuron: i32, weights: Vec<f64>) {
+        self.inner.SetNeuronWeights(layer, neuron, &weights);
+    }
+
     /// Get model info
     #[napi]
     pub fn info(&self) -> ModelInfo {

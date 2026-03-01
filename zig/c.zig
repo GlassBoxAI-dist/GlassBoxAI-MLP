@@ -141,6 +141,15 @@ pub extern fn mlp_get_weight_v(mlp: MlpHandle, layer: i32, neuron: i32, weight_i
 pub extern fn mlp_get_bias_m(mlp: MlpHandle, layer: i32, neuron: i32) f64;
 pub extern fn mlp_get_bias_v(mlp: MlpHandle, layer: i32, neuron: i32) f64;
 
+// Adam optimizer state setters
+pub extern fn mlp_set_weight_m(mlp: MlpHandle, layer: i32, neuron: i32, weight_idx: i32, value: f64) void;
+pub extern fn mlp_set_weight_v(mlp: MlpHandle, layer: i32, neuron: i32, weight_idx: i32, value: f64) void;
+pub extern fn mlp_set_bias_m(mlp: MlpHandle, layer: i32, neuron: i32, value: f64) void;
+pub extern fn mlp_set_bias_v(mlp: MlpHandle, layer: i32, neuron: i32, value: f64) void;
+pub extern fn mlp_set_timestep(mlp: MlpHandle, value: i32) void;
+pub extern fn mlp_set_layer_activation(mlp: MlpHandle, layer: i32, activation: i32) void;
+pub extern fn mlp_set_neuron_weights(mlp: MlpHandle, layer: i32, neuron: i32, weights: [*]const f64, weights_len: i32) i32;
+
 // Histograms
 pub extern fn mlp_get_activation_histogram(
     mlp: MlpHandle,

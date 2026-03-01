@@ -189,5 +189,28 @@ namespace GlassBoxAI.MLP
 
         [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int mlp_get_timestep(IntPtr mlp);
+
+        [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void mlp_set_weight_m(IntPtr mlp, int layer, int neuron, int weightIdx, double value);
+
+        [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void mlp_set_weight_v(IntPtr mlp, int layer, int neuron, int weightIdx, double value);
+
+        [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void mlp_set_bias_m(IntPtr mlp, int layer, int neuron, double value);
+
+        [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void mlp_set_bias_v(IntPtr mlp, int layer, int neuron, double value);
+
+        [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void mlp_set_timestep(IntPtr mlp, int value);
+
+        [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void mlp_set_layer_activation(IntPtr mlp, int layer, int activation);
+
+        [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int mlp_set_neuron_weights(
+            IntPtr mlp, int layer, int neuron, [In] double[] weights, int weightsLen
+        );
     }
 }

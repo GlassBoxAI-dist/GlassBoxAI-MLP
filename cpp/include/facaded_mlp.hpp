@@ -493,6 +493,55 @@ public:
     }
 
     /**
+     * Set Adam optimizer's first moment (M) for a weight
+     */
+    void set_weight_m(int layer, int neuron, int weight_idx, double value) {
+        mlp_set_weight_m(handle_, layer, neuron, weight_idx, value);
+    }
+
+    /**
+     * Set Adam optimizer's second moment (V) for a weight
+     */
+    void set_weight_v(int layer, int neuron, int weight_idx, double value) {
+        mlp_set_weight_v(handle_, layer, neuron, weight_idx, value);
+    }
+
+    /**
+     * Set Adam optimizer's first moment (M) for a bias
+     */
+    void set_bias_m(int layer, int neuron, double value) {
+        mlp_set_bias_m(handle_, layer, neuron, value);
+    }
+
+    /**
+     * Set Adam optimizer's second moment (V) for a bias
+     */
+    void set_bias_v(int layer, int neuron, double value) {
+        mlp_set_bias_v(handle_, layer, neuron, value);
+    }
+
+    /**
+     * Set Adam optimizer timestep
+     */
+    void set_timestep(int value) {
+        mlp_set_timestep(handle_, value);
+    }
+
+    /**
+     * Set the activation type of a layer
+     */
+    void set_layer_activation(int layer, Activation activation) {
+        mlp_set_layer_activation(handle_, layer, static_cast<int32_t>(activation));
+    }
+
+    /**
+     * Set all weights for a neuron
+     */
+    int set_neuron_weights(int layer, int neuron, const std::vector<double>& weights) {
+        return mlp_set_neuron_weights(handle_, layer, neuron, weights.data(), static_cast<int32_t>(weights.size()));
+    }
+
+    /**
      * String representation
      */
     std::string to_string() const {

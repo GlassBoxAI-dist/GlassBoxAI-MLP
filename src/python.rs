@@ -602,6 +602,75 @@ impl PyMLP {
         self.inner.GetGradientHistogram(layer, bins as usize)
     }
 
+    /// Set Adam first moment (M) for a specific weight
+    ///
+    /// Args:
+    ///     layer (int): Layer index
+    ///     neuron (int): Neuron index
+    ///     weight_idx (int): Weight index
+    ///     value (float): New first moment value
+    fn set_weight_m(&mut self, layer: i32, neuron: i32, weight_idx: i32, value: f64) {
+        self.inner.SetWeightM(layer, neuron, weight_idx, value);
+    }
+
+    /// Set Adam second moment (V) for a specific weight
+    ///
+    /// Args:
+    ///     layer (int): Layer index
+    ///     neuron (int): Neuron index
+    ///     weight_idx (int): Weight index
+    ///     value (float): New second moment value
+    fn set_weight_v(&mut self, layer: i32, neuron: i32, weight_idx: i32, value: f64) {
+        self.inner.SetWeightV(layer, neuron, weight_idx, value);
+    }
+
+    /// Set Adam first moment (M) for a specific bias
+    ///
+    /// Args:
+    ///     layer (int): Layer index
+    ///     neuron (int): Neuron index
+    ///     value (float): New first moment value
+    fn set_bias_m(&mut self, layer: i32, neuron: i32, value: f64) {
+        self.inner.SetBiasM(layer, neuron, value);
+    }
+
+    /// Set Adam second moment (V) for a specific bias
+    ///
+    /// Args:
+    ///     layer (int): Layer index
+    ///     neuron (int): Neuron index
+    ///     value (float): New second moment value
+    fn set_bias_v(&mut self, layer: i32, neuron: i32, value: f64) {
+        self.inner.SetBiasV(layer, neuron, value);
+    }
+
+    /// Set Adam optimizer timestep
+    ///
+    /// Args:
+    ///     value (int): New timestep value
+    fn set_timestep(&mut self, value: i32) {
+        self.inner.SetTimestep(value);
+    }
+
+    /// Set activation function for a layer
+    ///
+    /// Args:
+    ///     layer (int): Layer index
+    ///     activation (ActivationType): Activation function to use
+    fn set_layer_activation(&mut self, layer: i32, activation: PyActivationType) {
+        self.inner.SetLayerActivation(layer, activation.into());
+    }
+
+    /// Set all weights for a neuron
+    ///
+    /// Args:
+    ///     layer (int): Layer index
+    ///     neuron (int): Neuron index
+    ///     weights (list[float]): New weight values
+    fn set_neuron_weights(&mut self, layer: i32, neuron: i32, weights: Vec<f64>) {
+        self.inner.SetNeuronWeights(layer, neuron, &weights);
+    }
+
     /// Get model info as string
     fn __repr__(&self) -> String {
         format!(

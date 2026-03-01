@@ -80,6 +80,7 @@ This project demonstrates enterprise-grade software engineering practices includ
 | **Model Persistence** | JSON serialization for model save/load |
 | **ONNX Export/Import** | Interoperability with the global AI ecosystem |
 | **Feature Importance** | GlassBox interpretability - understand which inputs matter most |
+| **Mutation API** | Full get/set for optimizer state (Adam M/V), timestep, activations, and bulk weights |
 
 ### GPU Acceleration
 
@@ -407,6 +408,27 @@ let v = mlp.get_weight_v(1, 0, 0);
 let hist = mlp.activation_histogram(1, 10);
 ```
 
+### **Mutation API**
+
+Full control over internal model state for checkpointing, transfer learning, and research:
+
+```rust
+// Set Adam optimizer moments
+mlp.set_weight_m(1, 0, 0, 0.001);
+mlp.set_weight_v(1, 0, 0, 0.0001);
+mlp.set_bias_m(1, 0, 0.001);
+mlp.set_bias_v(1, 0, 0.0001);
+
+// Set optimizer timestep
+mlp.set_timestep(100);
+
+// Change layer activation at runtime
+mlp.set_layer_activation(1, ActivationType::ReLU);
+
+// Bulk-set all weights for a neuron
+mlp.set_weights(1, 0, &[0.1, 0.2, 0.3]);
+```
+
 ### **Feature Flags**
 
 | Feature | Description |
@@ -500,7 +522,22 @@ MLP(
 | `set_neuron_weight(layer, neuron, weight_idx, value)` | Set a specific weight |
 | `set_neuron_bias(layer, neuron, value)` | Set a neuron's bias |
 | `get_layer_outputs(layer)` | Get layer outputs after forward pass |
+| `get_layer_errors(layer)` | Get layer errors/gradients after training |
+| `get_layer_size(layer)` | Get number of neurons in a layer |
+| `get_layer_activation(layer)` | Get activation type of a layer |
 | `feature_importance()` | Calculate feature importance scores |
+
+#### Mutation Methods
+
+| Method | Description |
+|--------|-------------|
+| `set_weight_m(layer, neuron, weight_idx, value)` | Set Adam weight first moment (M) |
+| `set_weight_v(layer, neuron, weight_idx, value)` | Set Adam weight second moment (V) |
+| `set_bias_m(layer, neuron, value)` | Set Adam bias first moment (M) |
+| `set_bias_v(layer, neuron, value)` | Set Adam bias second moment (V) |
+| `set_timestep(value)` | Set Adam optimizer timestep |
+| `set_layer_activation(layer, activation)` | Set activation function for a layer |
+| `set_neuron_weights(layer, neuron, weights)` | Set all weights for a neuron (bulk) |
 
 #### Backend Methods
 
@@ -686,7 +723,29 @@ interface MlpOptions {
 | `setNeuronWeight(layer, neuron, weightIdx, value)` | Set a specific weight |
 | `setNeuronBias(layer, neuron, value)` | Set a neuron's bias |
 | `getLayerOutputs(layer)` | Get layer outputs after forward pass |
+| `getLayerErrors(layer)` | Get layer errors/gradients after training |
+| `getLayerSize(layer)` | Get number of neurons in a layer |
+| `getLayerActivation(layer)` | Get activation type of a layer |
+| `getWeightM(layer, neuron, weightIdx)` | Get Adam weight first moment (M) |
+| `getWeightV(layer, neuron, weightIdx)` | Get Adam weight second moment (V) |
+| `getBiasM(layer, neuron)` | Get Adam bias first moment (M) |
+| `getBiasV(layer, neuron)` | Get Adam bias second moment (V) |
+| `getTimestep()` | Get Adam optimizer timestep |
+| `getActivationHistogram(layer, bins)` | Get activation histogram for a layer |
+| `getGradientHistogram(layer, bins)` | Get gradient histogram for a layer |
 | `featureImportance()` | Returns `{ featureIndex, score }[]` |
+
+#### Mutation Methods
+
+| Method | Description |
+|--------|-------------|
+| `setWeightM(layer, neuron, weightIdx, value)` | Set Adam weight first moment (M) |
+| `setWeightV(layer, neuron, weightIdx, value)` | Set Adam weight second moment (V) |
+| `setBiasM(layer, neuron, value)` | Set Adam bias first moment (M) |
+| `setBiasV(layer, neuron, value)` | Set Adam bias second moment (V) |
+| `setTimestep(value)` | Set Adam optimizer timestep |
+| `setLayerActivation(layer, activation)` | Set activation function for a layer |
+| `setNeuronWeights(layer, neuron, weights)` | Set all weights for a neuron (bulk) |
 
 #### Backend Methods
 
@@ -822,6 +881,21 @@ save(mlp, "model.json")
 mlp2 = load("model.json")
 ```
 
+### **Mutation API**
+
+```julia
+# Set Adam optimizer state
+set_weight_m!(mlp, 1, 1, 1, 0.001)
+set_weight_v!(mlp, 1, 1, 1, 0.0001)
+set_bias_m!(mlp, 1, 1, 0.001)
+set_bias_v!(mlp, 1, 1, 0.0001)
+set_timestep!(mlp, 100)
+
+# Change activation and bulk-set weights
+set_layer_activation!(mlp, 1, ReLU)
+set_neuron_weights!(mlp, 1, 1, [0.1, 0.2, 0.3])
+```
+
 ### **Installation**
 
 ```bash
@@ -867,6 +941,21 @@ int main() {
     
     return 0;
 }
+```
+
+### **Mutation API**
+
+```cpp
+// Set Adam optimizer state
+mlp.set_weight_m(1, 0, 0, 0.001);
+mlp.set_weight_v(1, 0, 0, 0.0001);
+mlp.set_bias_m(1, 0, 0.001);
+mlp.set_bias_v(1, 0, 0.0001);
+mlp.set_timestep(100);
+
+// Change activation and bulk-set weights
+mlp.set_layer_activation(1, Activation::ReLU);
+mlp.set_neuron_weights(1, 0, {0.1, 0.2, 0.3});
 ```
 
 ### **Building**
@@ -926,6 +1015,21 @@ func main() {
 }
 ```
 
+### **Mutation API**
+
+```go
+// Set Adam optimizer state
+mlp.SetWeightM(1, 0, 0, 0.001)
+mlp.SetWeightV(1, 0, 0, 0.0001)
+mlp.SetBiasM(1, 0, 0.001)
+mlp.SetBiasV(1, 0, 0.0001)
+mlp.SetTimestep(100)
+
+// Change activation and bulk-set weights
+mlp.SetLayerActivation(1, facadedmlp.ReLU)
+mlp.SetNeuronWeights(1, 0, []float64{0.1, 0.2, 0.3})
+```
+
 ### **Installation**
 
 ```bash
@@ -970,6 +1074,21 @@ Console.WriteLine($"Final loss: {result.FinalLoss:F6}");
 
 var output = mlp.Predict(new[] { 1.0, 0.0 });
 Console.WriteLine($"Prediction: {output[0]:F4}");
+```
+
+### **Mutation API**
+
+```csharp
+// Set Adam optimizer state
+mlp.SetWeightM(1, 0, 0, 0.001);
+mlp.SetWeightV(1, 0, 0, 0.0001);
+mlp.SetBiasM(1, 0, 0.001);
+mlp.SetBiasV(1, 0, 0.0001);
+mlp.SetTimestep(100);
+
+// Change activation and bulk-set weights
+mlp.SetLayerActivation(1, ActivationType.ReLU);
+mlp.SetNeuronWeights(1, 0, new[] { 0.1, 0.2, 0.3 });
 ```
 
 ### **Building**
@@ -1029,6 +1148,21 @@ pub fn main() !void {
 }
 ```
 
+### **Mutation API**
+
+```zig
+// Set Adam optimizer state
+net.setWeightM(1, 0, 0, 0.001);
+net.setWeightV(1, 0, 0, 0.0001);
+net.setBiasM(1, 0, 0.001);
+net.setBiasV(1, 0, 0.0001);
+net.setTimestep(100);
+
+// Change activation and bulk-set weights
+net.setLayerActivation(1, .relu);
+try net.setNeuronWeights(1, 0, &[_]f64{ 0.1, 0.2, 0.3 });
+```
+
 ### **Building**
 
 ```bash
@@ -1068,10 +1202,22 @@ glassboxai-mlp <command> [options]
 | `get-weight` | Get a single weight value |
 | `set-weight` | Set a single weight value |
 | `get-weights` | Get all weights for a neuron |
+| `set-weights` | Set all weights for a neuron (bulk) |
 | `get-bias` | Get bias for a neuron |
 | `set-bias` | Set bias for a neuron |
 | `layer-info` | Display layer information |
 | `histogram` | Display activation/error histogram |
+| `set-weight-m` | Set Adam weight first moment (M) |
+| `set-weight-v` | Set Adam weight second moment (V) |
+| `set-bias-m` | Set Adam bias first moment (M) |
+| `set-bias-v` | Set Adam bias second moment (V) |
+| `set-timestep` | Set Adam optimizer timestep |
+| `set-activation` | Set layer activation function |
+| `set-learning-rate` | Set model learning rate |
+| `set-optimizer-type` | Set optimizer type (sgd/adam/rmsprop) |
+| `set-dropout` | Set dropout rate |
+| `set-l2` | Set L2 regularization lambda |
+| `set-batch-norm` | Set batch normalization on/off |
 
 ### Options
 
@@ -1081,13 +1227,20 @@ glassboxai-mlp <command> [options]
 | `-H, --hidden=N,M,...` | Hidden layer sizes |
 | `-o, --outputs=N` | Number of output neurons |
 | `-m, --model=FILE` | Model file path |
-| `-s, --save=FILE` | Save output to file |
+| `-s, --save=FILE` | Save output/modified model to file |
 | `-d, --data=FILE` | Training data CSV |
 | `--epochs=N` | Training epochs |
 | `--lr=VALUE` | Learning rate |
-| `--activation=TYPE` | Activation function |
-| `--optimizer=TYPE` | Optimizer type |
+| `--activation=TYPE` | Activation function (sigmoid/tanh/relu/softmax) |
+| `--optimizer=TYPE` | Optimizer type (sgd/adam/rmsprop) |
 | `--gpu=BACKEND` | GPU backend: auto, cuda, opencl, cpu |
+| `--layer=N` | Layer index (for weight/bias/activation commands) |
+| `--neuron=N` | Neuron index |
+| `--weight=N` | Weight index |
+| `--value=V` | Value to set (for set-* commands) |
+| `--values=v1,v2,...` | Comma-separated values (for set-weights) |
+| `--timestep=N` | Timestep value (for set-timestep) |
+| `--on / --off` | Toggle for set-batch-norm |
 
 ### CLI Examples
 
@@ -1109,6 +1262,24 @@ facaded_mlp_cuda feature-importance -m trained.json
 
 # Export to ONNX
 facaded_mlp_cuda export-onnx -m trained.json -s model.onnx
+
+# Set Adam optimizer state
+facaded_mlp_cuda set-weight-m -m model.json --layer=1 --neuron=0 --weight=0 --value=0.001 -s model.json
+facaded_mlp_cuda set-weight-v -m model.json --layer=1 --neuron=0 --weight=0 --value=0.0001 -s model.json
+facaded_mlp_cuda set-bias-m -m model.json --layer=1 --neuron=0 --value=0.001 -s model.json
+facaded_mlp_cuda set-bias-v -m model.json --layer=1 --neuron=0 --value=0.0001 -s model.json
+
+# Set timestep, activation, and hyperparameters
+facaded_mlp_cuda set-timestep -m model.json --timestep=100 -s model.json
+facaded_mlp_cuda set-activation -m model.json --layer=1 --activation=relu -s model.json
+facaded_mlp_cuda set-learning-rate -m model.json --value=0.001 -s model.json
+facaded_mlp_cuda set-optimizer-type -m model.json --optimizer=adam -s model.json
+facaded_mlp_cuda set-dropout -m model.json --value=0.2 -s model.json
+facaded_mlp_cuda set-l2 -m model.json --value=0.0001 -s model.json
+facaded_mlp_cuda set-batch-norm -m model.json --on -s model.json
+
+# Bulk-set all weights for a neuron
+facaded_mlp_cuda set-weights -m model.json --layer=1 --neuron=0 --values=0.1,0.2,0.3 -s model.json
 ```
 
 ---

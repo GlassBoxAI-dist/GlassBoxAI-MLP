@@ -430,6 +430,41 @@ impl MLP {
         self.inner.GetBiasV(layer as i32, neuron as i32)
     }
 
+    /// Set Adam optimizer's first moment (M) for a weight.
+    pub fn set_weight_m(&mut self, layer: usize, neuron: usize, weight_idx: usize, value: f64) {
+        self.inner.SetWeightM(layer as i32, neuron as i32, weight_idx as i32, value);
+    }
+
+    /// Set Adam optimizer's second moment (V) for a weight.
+    pub fn set_weight_v(&mut self, layer: usize, neuron: usize, weight_idx: usize, value: f64) {
+        self.inner.SetWeightV(layer as i32, neuron as i32, weight_idx as i32, value);
+    }
+
+    /// Set Adam optimizer's first moment (M) for a bias.
+    pub fn set_bias_m(&mut self, layer: usize, neuron: usize, value: f64) {
+        self.inner.SetBiasM(layer as i32, neuron as i32, value);
+    }
+
+    /// Set Adam optimizer's second moment (V) for a bias.
+    pub fn set_bias_v(&mut self, layer: usize, neuron: usize, value: f64) {
+        self.inner.SetBiasV(layer as i32, neuron as i32, value);
+    }
+
+    /// Set the optimizer timestep.
+    pub fn set_timestep(&mut self, value: i32) {
+        self.inner.SetTimestep(value);
+    }
+
+    /// Set the activation function for a layer.
+    pub fn set_layer_activation(&mut self, layer: usize, activation: ActivationType) {
+        self.inner.SetLayerActivation(layer as i32, activation_to_internal(activation));
+    }
+
+    /// Set all weights for a specific neuron (bulk set).
+    pub fn set_weights(&mut self, layer: usize, neuron: usize, weights: &[f64]) {
+        self.inner.SetNeuronWeights(layer as i32, neuron as i32, weights);
+    }
+
     /// Get activation histogram for a layer.
     pub fn activation_histogram(&self, layer: usize, bins: usize) -> Vec<i32> {
         self.inner.GetActivationHistogram(layer as i32, bins)
